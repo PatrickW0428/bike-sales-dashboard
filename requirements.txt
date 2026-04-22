@@ -1,0 +1,8 @@
+streamlit
+pandas
+plotly
+openpyxl
+
+# Optional / UI extras used by the app
+altair
+streamlit-extras
