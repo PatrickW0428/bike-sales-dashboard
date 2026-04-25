@@ -39,14 +39,14 @@ APPLE_GLOBAL_CSS = """
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&display=swap');
   :root{
-    --bg: #FBFBFD;
+    --bg: #F5F3EF;
     --text: #111827;
     --muted: rgba(17,24,39,0.60);
-    --apple-blue: #007AFF;
-    --apple-indigo: #5856D6;
-    --apple-purple: #AF52DE;
-    --apple-pink: #FF2D55;
-    --apple-orange: #FF9500;
+    --apple-blue: #FF7A33;
+    --apple-indigo: #3DD1A8;
+    --apple-purple: #FF6491;
+    --apple-pink: #FFBC2E;
+    --apple-orange: #FF5A5A;
     --glass-bg: rgba(255, 255, 255, 0.7);
     --glass-border: 1px solid rgba(0,0,0,0.05);
     --glass-shadow: 0 8px 30px rgba(0,0,0,0.04);
@@ -64,16 +64,20 @@ APPLE_GLOBAL_CSS = """
   [data-testid="stAppViewContainer"] section.main{
     background-color: var(--bg) !important;
     background-image:
-      radial-gradient(circle at 12px 12px, rgba(0,122,255,0.075) 1.2px, rgba(0,0,0,0) 1.35px),
-      radial-gradient(circle at 20px 20px, rgba(0,122,255,0.032) 1.05px, rgba(0,0,0,0) 1.2px),
-      radial-gradient(circle at 20% 10%, rgba(90,200,250,0.18), rgba(0,0,0,0) 46%),
-      radial-gradient(circle at 86% 12%, rgba(0,122,255,0.085), rgba(0,0,0,0) 44%),
-      radial-gradient(circle at 12% 88%, rgba(255,149,0,0.12), rgba(0,0,0,0) 52%),
-      radial-gradient(circle at 92% 80%, rgba(255,149,0,0.055), rgba(0,0,0,0) 54%),
+      radial-gradient(circle at 12px 12px, rgba(255,140,66,0.075) 1.2px, rgba(0,0,0,0) 1.35px),
+      radial-gradient(circle at 20px 20px, rgba(255,140,66,0.032) 1.05px, rgba(0,0,0,0) 1.2px),
+      /* Large color blobs for glassmorphism refraction (tropical mix, no blue-purple) */
+      radial-gradient(circle at 15% 25%, rgba(60,210,170,0.20), rgba(0,0,0,0) 42%),
+      radial-gradient(circle at 85% 35%, rgba(255,120,50,0.16), rgba(0,0,0,0) 48%),
+      radial-gradient(circle at 50% 85%, rgba(255,100,140,0.13), rgba(0,0,0,0) 45%),
+      radial-gradient(circle at 20% 10%, rgba(60,210,170,0.12), rgba(0,0,0,0) 46%),
+      radial-gradient(circle at 86% 12%, rgba(255,150,50,0.08), rgba(0,0,0,0) 44%),
+      radial-gradient(circle at 12% 88%, rgba(255,190,60,0.09), rgba(0,0,0,0) 52%),
+      radial-gradient(circle at 92% 80%, rgba(255,120,100,0.05), rgba(0,0,0,0) 54%),
       linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.00) 58%) !important;
-    background-size: 24px 24px, 28px 28px, auto, auto, auto, auto, auto !important;
+    background-size: 24px 24px, 28px 28px, auto, auto, auto, auto, auto, auto, auto, auto !important;
     background-attachment: fixed !important;
-    background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat !important;
+    background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat !important;
     filter: saturate(0.92) !important;
   }
 
@@ -129,7 +133,7 @@ APPLE_GLOBAL_CSS = """
 
   /* Links: avoid default red/purple */
   a, a:visited { color: var(--apple-blue) !important; }
-  a:hover { color: rgba(0,122,255,0.80) !important; }
+  a:hover { color: rgba(255,140,66,0.80) !important; }
 
   /* Custom signature footer (website-like) */
   .patrick-footer{
@@ -166,16 +170,16 @@ APPLE_GLOBAL_CSS = """
 
   /* Sidebar (clean, minimal) */
   section[data-testid="stSidebar"]{
-    background: rgba(251,251,253,0.75) !important;
+    background: rgba(245,243,239,0.75) !important;
     border-right: 1px solid rgba(17,24,39,0.08) !important;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     position: relative;
     overflow: hidden;
-    /* Cute pattern: subtle dots + soft gradients (Apple palette) */
+    /* Cute pattern: subtle dots + soft gradients (tropical mix) */
     background-image:
-      radial-gradient(circle at 10px 10px, rgba(0,122,255,0.10) 1.2px, rgba(0,0,0,0) 1.3px),
-      radial-gradient(circle at 18px 18px, rgba(175,82,222,0.08) 1.0px, rgba(0,0,0,0) 1.1px),
+      radial-gradient(circle at 10px 10px, rgba(60,210,170,0.09) 1.2px, rgba(0,0,0,0) 1.3px),
+      radial-gradient(circle at 18px 18px, rgba(255,140,50,0.07) 1.0px, rgba(0,0,0,0) 1.1px),
       linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.62));
     background-size: 22px 22px, 26px 26px, auto;
   }
@@ -189,7 +193,7 @@ APPLE_GLOBAL_CSS = """
     width: 170px;
     height: 170px;
     border-radius: 44% 56% 62% 38% / 45% 38% 62% 55%;
-    background: radial-gradient(circle at 30% 30%, rgba(90,200,250,0.50), rgba(88,86,214,0.22) 55%, rgba(0,0,0,0) 72%);
+    background: radial-gradient(circle at 30% 30%, rgba(60,210,170,0.40), rgba(255,130,50,0.18) 55%, rgba(0,0,0,0) 72%);
     filter: blur(0.2px);
     opacity: 0.95;
     pointer-events: none;
@@ -202,7 +206,7 @@ APPLE_GLOBAL_CSS = """
     width: 140px;
     height: 140px;
     border-radius: 58% 42% 50% 50% / 40% 58% 42% 60%;
-    background: radial-gradient(circle at 40% 35%, rgba(255,149,0,0.26), rgba(255,45,85,0.16) 58%, rgba(0,0,0,0) 74%);
+    background: radial-gradient(circle at 40% 35%, rgba(255,100,140,0.24), rgba(60,210,170,0.14) 58%, rgba(0,0,0,0) 74%);
     opacity: 0.85;
     pointer-events: none;
   }
@@ -225,7 +229,7 @@ APPLE_GLOBAL_CSS = """
   }
   section[data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within,
   section[data-testid="stSidebar"] [data-baseweb="input"] > div:focus-within{
-    box-shadow: 0 0 0 4px rgba(0,122,255,0.12) !important;
+    box-shadow: 0 0 0 4px rgba(255,140,66,0.12) !important;
   }
 
   /* Apple card spec */
@@ -240,95 +244,121 @@ APPLE_GLOBAL_CSS = """
   }
 
   /* Card containers via st.container(key=...) */
-  div[data-testid="stContainer"][data-key^="card_"]{
-    /* Scheme B: draw the "banner" directly on the card background */
-    background: var(--glass-bg);
+  div[class*="st-key-card_"]{
+    /* Glassmorphism: highly transparent, airy padding, content appears to float */
+    background: rgba(255,255,255,0.20);
     background-image:
-      radial-gradient(circle at 24px 26px, rgba(88,86,214,0.08) 1.1px, rgba(0,0,0,0) 1.2px),
-      radial-gradient(circle at 16px 18px, rgba(0,122,255,0.07) 1.0px, rgba(0,0,0,0) 1.1px),
-      linear-gradient(135deg, rgba(88,86,214,0.10), rgba(0,122,255,0.05) 55%, rgba(255,255,255,0.00) 100%),
-      radial-gradient(circle at 18% 38%, rgba(255,255,255,0.55), rgba(255,255,255,0.0) 55%),
-      radial-gradient(circle at 72% 18%, rgba(255,255,255,0.45), rgba(255,255,255,0.0) 58%),
-      linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.00) 55%);
+      radial-gradient(circle at 24px 26px, rgba(255,140,66,0.04) 1.1px, rgba(0,0,0,0) 1.2px),
+      radial-gradient(circle at 16px 18px, rgba(255,140,66,0.03) 1.0px, rgba(0,0,0,0) 1.1px),
+      linear-gradient(135deg, rgba(255,140,66,0.04), rgba(255,140,66,0.02) 55%, rgba(255,255,255,0.00) 100%),
+      radial-gradient(circle at 18% 38%, rgba(255,255,255,0.30), rgba(255,255,255,0.0) 55%),
+      radial-gradient(circle at 72% 18%, rgba(255,255,255,0.20), rgba(255,255,255,0.0) 58%),
+      linear-gradient(180deg, rgba(255,255,255,0.15), rgba(255,255,255,0.00) 55%);
     background-size: 22px 22px, 26px 26px, auto, auto, auto, auto;
     background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-    border-radius: 24px;
-    border: var(--glass-border);
-    box-shadow: var(--glass-shadow);
-    padding: 24px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+    padding: 28px;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     overflow: hidden;
+    position: relative;
   }
-  div[data-testid="stContainer"][data-key^="card_"] > div{
+
+  /* Top glass-edge highlight */
+  div[class*="st-key-card_"]::before{
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 24px;
+    right: 24px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.00), rgba(255,255,255,0.50) 25%, rgba(255,255,255,0.20) 50%, rgba(255,255,255,0.00) 75%);
+    border-radius: 0 0 999px 999px;
+    pointer-events: none;
+  }
+
+  div[class*="st-key-card_"] > div{
     padding: 0 !important;
   }
 
-  /* White "banner" backing for chart areas (like KPI cards) */
-  div[data-testid="stContainer"][data-key$="_plotwrap"],
+  /* Chart content area: nearly invisible so glass card shows through */
+  div[data-testid="stVerticalBlock"][class*="_plotwrap"],
   .share-plot-wrap{
-    background: rgba(255,255,255,0.60);
-    border: 1px solid rgba(17,24,39,0.06);
-    border-radius: 18px;
-    padding: 10px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.65);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.20);
     overflow: hidden;
   }
-  div[data-testid="stContainer"][data-key$="_plotwrap"] > div{ padding: 0 !important; }
+  div[data-testid="stVerticalBlock"][class*="_plotwrap"] > div{ padding: 0 !important; }
 
-  /* Categories treemap: remove any extra "shadowy" framing */
-  div[data-testid="stContainer"][data-key="card_mix"]{
-    box-shadow: none !important;
-    border: 1px solid rgba(0,0,0,0.05) !important;
-    border-radius: 24px !important;
-    background: rgba(255, 255, 255, 0.3) !important;
+  /* Categories treemap: glassmorphism, aligned with other large cards */
+  div.st-key-card_mix{
+    box-shadow: 0 4px 12px rgba(0,0,0,0.10) !important;
+    border: 1px solid rgba(255,255,255,0.25) !important;
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.20) !important;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
     overflow: hidden !important;
+    position: relative !important;
     /* inner glow + soft gradient for "jelly" */
     background-image:
-      radial-gradient(circle at 18% 12%, rgba(255,255,255,0.60), rgba(255,255,255,0.10) 42%, rgba(255,255,255,0.00) 70%),
-      linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.18));
+      radial-gradient(circle at 18% 12%, rgba(255,255,255,0.35), rgba(255,255,255,0.06) 42%, rgba(255,255,255,0.00) 70%),
+      linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08)) !important;
+  }
+
+  /* Row 2 alignment: Trend + Share */
+  div.st-key-card_trend,
+  div.st-key-card_share {
+    min-height: 520px;
+  }
+
+  /* Row 3 alignment: Categories + Customers */
+  div.st-key-card_mix,
+  div.st-key-card_topcust {
+    min-height: 600px;
   }
 
   /* Customers map card: prevent map from overlapping the Top 3 list */
-  div[data-testid="stContainer"][data-key="card_topcust"] [data-testid="stPlotlyChart"]{
+  div.st-key-card_topcust [data-testid="stPlotlyChart"]{
     overflow: hidden !important;
     border-radius: 18px !important;
   }
   /* Share donut: pixel-level nudge (guaranteed visible) */
-  div[data-testid="stContainer"][data-key="card_share"] [data-testid="stPlotlyChart"]{
+  div.st-key-card_share [data-testid="stPlotlyChart"]{
     overflow: visible !important;
   }
   /* Plotly root is .js-plotly-plot; target it directly (robust) */
-  div[data-testid="stContainer"][data-key="card_share"] [data-testid="stPlotlyChart"] .js-plotly-plot{
+  div.st-key-card_share [data-testid="stPlotlyChart"] .js-plotly-plot{
     transform: translate(36px, -10px) scale(1.02) !important; /* big nudge for verification */
     transform-origin: top left !important;
     will-change: transform;
   }
   /* Fallback: sometimes Streamlit wraps plotly in extra divs */
-  div[data-testid="stContainer"][data-key="card_share"] [data-testid="stPlotlyChart"] .js-plotly-plot + div{
+  div.st-key-card_share [data-testid="stPlotlyChart"] .js-plotly-plot + div{
     transform: translate(36px, -10px) scale(1.02) !important;
     transform-origin: top left !important;
   }
-  div[data-testid="stContainer"][data-key="cust_map_left"]{
+  div.st-key-cust_map_left{
     position: relative !important;
     z-index: 1 !important;
     overflow: hidden !important;
   }
-  div[data-testid="stContainer"][data-key="cust_map_right"]{
+  div.st-key-cust_map_right{
     position: relative !important;
     z-index: 5 !important;
   }
-  div[data-testid="stContainer"][data-key="card_mix"] [data-testid="stPlotlyChart"]{
+  div.st-key-card_mix [data-testid="stPlotlyChart"]{
     box-shadow: none !important;
     border: none !important;
     background: transparent !important;
   }
   /* Jelly feel on treemap tiles (SVG) */
-  div[data-testid="stContainer"][data-key="card_mix"] [data-testid="stPlotlyChart"] svg .slice path{
+  div.st-key-card_mix [data-testid="stPlotlyChart"] svg .slice path{
     stroke: rgba(255,255,255,0.00) !important;
     stroke-width: 0px !important;
     filter: saturate(1.05) brightness(1.02);
@@ -343,8 +373,8 @@ APPLE_GLOBAL_CSS = """
     /* Tiny neon edge (Apple subtle) */
     text-shadow:
       0 0 0.6px rgba(255,255,255,0.55),
-      0 0 10px rgba(88,86,214,0.10),
-      0 0 16px rgba(0,122,255,0.08);
+      0 0 10px rgba(255,140,66,0.10),
+      0 0 16px rgba(255,140,66,0.08);
   }
   .apple-subtitle{
     margin: -2px 0 0 0;
@@ -377,12 +407,12 @@ APPLE_GLOBAL_CSS = """
     font-weight: 750;
   }
   .badge-pos{
-    background: rgba(52,199,89,0.16);
-    color: rgba(52,199,89,0.95);
+    background: rgba(61,209,168,0.16);
+    color: rgba(61,209,168,0.95);
   }
   .badge-neg{
-    background: rgba(255,45,85,0.14);
-    color: rgba(255,45,85,0.95);
+    background: rgba(255,100,140,0.14);
+    color: rgba(255,100,140,0.95);
   }
 
   .kpi-icon{
@@ -463,14 +493,14 @@ APPLE_GLOBAL_CSS = """
     color: rgba(17,24,39,0.65);
   }
   .fin-kpi .trend.up{
-    background: rgba(52,199,89,0.16);
-    color: rgba(52,199,89,0.95);
-    border-color: rgba(52,199,89,0.14);
+    background: rgba(61,209,168,0.16);
+    color: rgba(61,209,168,0.95);
+    border-color: rgba(61,209,168,0.14);
   }
   .fin-kpi .trend.down{
-    background: rgba(255,45,85,0.14);
-    color: rgba(255,45,85,0.95);
-    border-color: rgba(255,45,85,0.14);
+    background: rgba(255,100,140,0.14);
+    color: rgba(255,100,140,0.95);
+    border-color: rgba(255,100,140,0.14);
   }
 
   /* Card header row with micro icon */
@@ -509,7 +539,7 @@ APPLE_GLOBAL_CSS = """
     border-top: 1px solid rgba(0,0,0,0.06);
   }
   .share-icon,
-  div[data-testid="stContainer"][data-key="share_icon_row"] button{
+  div.st-key-share_icon_row button{
     width: 38px;
     height: 38px;
     border-radius: 14px;
@@ -526,23 +556,23 @@ APPLE_GLOBAL_CSS = """
     -webkit-backdrop-filter: blur(10px);
     opacity: 0.96;
   }
-  div[data-testid="stContainer"][data-key="share_icon_row"]{
+  div.st-key-share_icon_row{
     margin-top: 6px;
     padding-top: 10px;
     border-top: 1px solid rgba(0,0,0,0.06);
   }
-  div[data-testid="stContainer"][data-key="share_icon_row"] [data-testid="stHorizontalBlock"]{ gap: 10px !important; }
-  div[data-testid="stContainer"][data-key="share_icon_row"] button{
+  div.st-key-share_icon_row [data-testid="stHorizontalBlock"]{ gap: 10px !important; }
+  div.st-key-share_icon_row button{
     padding: 0 !important;
     min-height: 38px !important;
   }
-  div[data-testid="stContainer"][data-key="share_icon_row"] button:hover{
+  div.st-key-share_icon_row button:hover{
     box-shadow: 0 10px 22px rgba(0,0,0,0.07);
     transform: translateY(-1px);
   }
-  div[data-testid="stContainer"][data-key="share_icon_row"] button:focus{
+  div.st-key-share_icon_row button:focus{
     outline: none !important;
-    box-shadow: 0 0 0 4px rgba(0,122,255,0.14), 0 10px 22px rgba(0,0,0,0.07);
+    box-shadow: 0 0 0 4px rgba(255,140,66,0.14), 0 10px 22px rgba(0,0,0,0.07);
   }
 
   /* Top 3 list (Customers card) — keep native layout, add iOS styling */
@@ -556,9 +586,9 @@ APPLE_GLOBAL_CSS = """
     width: 24px;
     height: 24px;
     border-radius: 999px;
-    background: rgba(88,86,214,0.12);
-    color: rgba(88,86,214,0.95);
-    border: 1px solid rgba(88,86,214,0.14);
+    background: rgba(255,45,85,0.12);
+    color: rgba(255,45,85,0.95);
+    border: 1px solid rgba(255,45,85,0.14);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -606,15 +636,15 @@ APPLE_GLOBAL_CSS = """
     text-align: right;
     color: rgba(17,24,39,0.55);
   }
-  .cat-delta.pos{ color: rgba(52,199,89,0.95); }
-  .cat-delta.neg{ color: rgba(255,45,85,0.95); }
+  .cat-delta.pos{ color: rgba(61,209,168,0.95); }
+  .cat-delta.neg{ color: rgba(255,100,140,0.95); }
   .cat-dot{
     width: 14px;
     height: 14px;
     border-radius: 999px;
-    background: rgba(88,86,214,0.18);
-    border: 1px solid rgba(88,86,214,0.18);
-    box-shadow: 0 6px 18px rgba(88,86,214,0.10);
+    background: rgba(255,140,66,0.18);
+    border: 1px solid rgba(255,140,66,0.18);
+    box-shadow: 0 6px 18px rgba(255,140,66,0.10);
     margin-right: 8px;
     flex: 0 0 auto;
   }
@@ -629,7 +659,7 @@ APPLE_GLOBAL_CSS = """
     position:absolute;
     left:0; top:0; bottom:0;
     border-radius: 999px;
-    background: rgba(88,86,214,0.55);
+    background: rgba(255,140,66,0.55);
   }
   .bar-target{
     position:absolute;
@@ -637,15 +667,15 @@ APPLE_GLOBAL_CSS = """
     width: 2px;
     height: 20px;
     border-radius: 2px;
-    background: rgba(88,86,214,0.70);
-    box-shadow: 0 6px 16px rgba(88,86,214,0.18);
+    background: rgba(255,140,66,0.70);
+    box-shadow: 0 6px 16px rgba(255,140,66,0.18);
   }
   .pct-ring{
     width: 40px;
     height: 40px;
     border-radius: 999px;
     background:
-      conic-gradient(rgba(88,86,214,0.75) var(--p), rgba(17,24,39,0.10) 0);
+      conic-gradient(rgba(255,140,66,0.75) var(--p), rgba(17,24,39,0.10) 0);
     display:flex;
     align-items:center;
     justify-content:center;
@@ -698,10 +728,10 @@ APPLE_GLOBAL_CSS = """
   }
   .seg-dot{
     width: 8px; height: 8px; border-radius: 999px;
-    background: rgba(0,122,255,0.65);
-    box-shadow: 0 0 0 4px rgba(0,122,255,0.10);
+    background: rgba(255,140,66,0.65);
+    box-shadow: 0 0 0 4px rgba(255,140,66,0.10);
   }
-  .seg-dot.steady{ background: rgba(88,86,214,0.65); box-shadow: 0 0 0 4px rgba(88,86,214,0.10); }
+  .seg-dot.steady{ background: rgba(61,209,168,0.65); box-shadow: 0 0 0 4px rgba(61,209,168,0.10); }
   .seg-dot.low{ background: rgba(17,24,39,0.35); box-shadow: 0 0 0 4px rgba(17,24,39,0.06); }
 
   /* Responsive: keep it stable */
@@ -712,22 +742,25 @@ APPLE_GLOBAL_CSS = """
 </style>
 """
 
-APPLE_PALETTE = ["#007AFF", "#5856D6", "#AF52DE", "#FF2D55", "#FF9500"]
-COLOR_BLUE = "#007AFF"
-COLOR_INDIGO = "#5856D6"
-COLOR_PURPLE = "#AF52DE"
-COLOR_ORANGE = "#FF9500"
+APPLE_PALETTE = ["#FF8C42", "#3DD1A8", "#FF6491", "#FFBC2E", "#FF5A5A"]
+COLOR_BLUE = "#3DD1A8"
+COLOR_INDIGO = "#FF8C42"
+COLOR_PURPLE = "#FF6491"
+COLOR_ORANGE = "#FFBC2E"
 COLOR_MINT = "#34C759"
 
-# Blue-only palette (same hue family) for a more premium look
-BLUE_TINTS = [
-    "rgba(0,122,255,0.95)",
-    "rgba(0,122,255,0.80)",
-    "rgba(0,122,255,0.65)",
-    "rgba(0,122,255,0.52)",
-    "rgba(0,122,255,0.40)",
-    "rgba(88,86,214,0.55)",
+# Warm-only palette (orange family) for cohesive glassmorphism
+WARM_TINTS = [
+    "rgba(255,140,66,0.95)",
+    "rgba(255,140,66,0.80)",
+    "rgba(255,140,66,0.65)",
+    "rgba(255,140,66,0.52)",
+    "rgba(255,140,66,0.40)",
+    "rgba(61,209,168,0.55)",
 ]
+
+# Deprecated alias for backwards compatibility
+BLUE_TINTS = WARM_TINTS
 
 PLOTLY_LAYOUT_BASE: dict = {
     "paper_bgcolor": "rgba(0,0,0,0)",
@@ -1057,9 +1090,9 @@ def fig_time_trend(monthly: pd.DataFrame) -> go.Figure:
             fillgradient={
                 "type": "vertical",
                 "colorscale": [
-                    [0.0, "rgba(0,122,255,0.22)"],
-                    [0.6, "rgba(0,122,255,0.10)"],
-                    [1.0, "rgba(0,122,255,0.00)"],
+                    [0.0, "rgba(61,209,168,0.22)"],
+                    [0.6, "rgba(61,209,168,0.10)"],
+                    [1.0, "rgba(61,209,168,0.00)"],
                 ],
             },
             hoverinfo="skip",
@@ -1073,7 +1106,7 @@ def fig_time_trend(monthly: pd.DataFrame) -> go.Figure:
             mode="lines",
             line={"color": "rgba(0,0,0,0)", "width": 0},
             fill="tozeroy",
-            fillcolor="rgba(0,122,255,0.14)",
+            fillcolor="rgba(61,209,168,0.14)",
             hoverinfo="skip",
             name="Profit (fill)",
         )
@@ -1138,7 +1171,7 @@ def fig_bubble_map(df: pd.DataFrame, *, location_level: str = "country") -> go.F
             size_max=40,
             hover_name=loc_col,
             hover_data={"revenue_usd": ":,.2f", "profit_usd": ":,.2f", "margin": ":.2%"},
-            color_continuous_scale=[(0.0, "#E1F5FE"), (0.5, "#5AC8FA"), (1.0, "#007AFF")],
+            color_continuous_scale=[(0.0, "#FFF3E0"), (0.5, "#FFCC80"), (1.0, "#FF8C42")],
             zoom=1,
         )
         fig.update_layout(
@@ -1176,7 +1209,7 @@ def fig_bubble_map(df: pd.DataFrame, *, location_level: str = "country") -> go.F
         size_max=40,
         hover_name=loc_col,
         hover_data={"revenue_usd": ":,.2f", "profit_usd": ":,.2f", "margin": ":.2%"},
-        color_continuous_scale=[(0.0, "#E1F5FE"), (0.5, "#5AC8FA"), (1.0, "#007AFF")],
+        color_continuous_scale=[(0.0, "#FFF3E0"), (0.5, "#FFCC80"), (1.0, "#FF8C42")],
     )
     fig.update_layout(**PLOTLY_LAYOUT_BASE, autosize=True)
     fig.update_geos(
@@ -1223,7 +1256,7 @@ def fig_category_mix(df: pd.DataFrame, category_col: str) -> go.Figure:
         y=category_col,
         orientation="h",
         color="profit_usd",
-        color_continuous_scale=[(0.0, "rgba(0,122,255,0.20)"), (1.0, "rgba(0,122,255,0.95)")],
+        color_continuous_scale=[(0.0, "rgba(255,140,66,0.20)"), (1.0, "rgba(255,140,66,0.95)")],
         hover_data={"revenue_usd": ":,.2f", "profit_usd": ":,.2f", "margin": ":.2%"},
     )
     fig.update_layout(autosize=True)
@@ -1278,7 +1311,7 @@ def fig_category_treemap(df: pd.DataFrame, category_col: str) -> go.Figure:
         path=[cat_col, prod_col],
         values="revenue_usd",
         color="margin",
-        color_continuous_scale=["#E1F5FE", "#007AFF"],
+        color_continuous_scale=["#FFF3E0", "#FF8C42"],
         range_color=(0.0, float(max(0.01, agg["margin"].max()))),
     )
 
@@ -1537,7 +1570,7 @@ def fig_top_customers(df: pd.DataFrame, *, top_n: int = 8) -> go.Figure:
         y=cust_col,
         orientation="h",
         color="Revenue USD",
-        color_continuous_scale=[(0.0, "rgba(0,122,255,0.25)"), (1.0, "rgba(0,122,255,0.95)")],
+        color_continuous_scale=[(0.0, "rgba(255,140,66,0.25)"), (1.0, "rgba(255,140,66,0.95)")],
     )
     fig.update_traces(
         hovertemplate=("Customer: %{y}<br>Revenue: $%{x:,.2f}<extra></extra>"),
@@ -1597,7 +1630,7 @@ def fig_customer_hotspots(df: pd.DataFrame) -> go.Figure:
             color="revenue_usd",
             size_max=36,
             zoom=1,
-            color_continuous_scale=[(0.0, "rgba(0,122,255,0.25)"), (1.0, "rgba(0,122,255,0.95)")],
+            color_continuous_scale=[(0.0, "rgba(255,140,66,0.25)"), (1.0, "rgba(255,140,66,0.95)")],
         )
         fig.update_traces(
             hovertemplate=(
@@ -1622,7 +1655,7 @@ def fig_customer_hotspots(df: pd.DataFrame) -> go.Figure:
         size="revenue_usd",
         color="revenue_usd",
         size_max=36,
-        color_continuous_scale=[(0.0, "rgba(0,122,255,0.25)"), (1.0, "rgba(0,122,255,0.95)")],
+        color_continuous_scale=[(0.0, "rgba(255,140,66,0.25)"), (1.0, "rgba(255,140,66,0.95)")],
     )
     fig.update_traces(
         hovertemplate=(
@@ -1746,11 +1779,11 @@ def fig_customer_heatmap(df: pd.DataFrame, *, focus_country: str = "US") -> go.F
         range_color=(0.0, zmax),
         # Deeper purple hotspot ramp (Apple indigo) with stronger opacity
         color_continuous_scale=[
-            (0.0, "rgba(88,86,214,0.00)"),
-            (0.25, "rgba(88,86,214,0.18)"),
-            (0.55, "rgba(88,86,214,0.45)"),
-            (0.80, "rgba(88,86,214,0.70)"),
-            (1.0, "rgba(88,86,214,0.95)"),
+            (0.0, "rgba(255,45,85,0.00)"),
+            (0.25, "rgba(255,45,85,0.18)"),
+            (0.55, "rgba(255,45,85,0.45)"),
+            (0.80, "rgba(255,45,85,0.70)"),
+            (1.0, "rgba(255,45,85,0.95)"),
         ],
         hover_name="City",
         hover_data={"Country": True, "Revenue USD": ":,.2f", "lat": False, "lon": False},
@@ -1767,7 +1800,7 @@ def fig_customer_heatmap(df: pd.DataFrame, *, focus_country: str = "US") -> go.F
             mode="markers",
             marker={
                 "size": 18,
-                "color": "rgba(88,86,214,0.22)",  # halo
+                "color": "rgba(255,45,85,0.22)",  # halo
                 "opacity": 1.0,
             },
             text=top["City"],
@@ -1801,7 +1834,7 @@ def fig_customer_heatmap(df: pd.DataFrame, *, focus_country: str = "US") -> go.F
             mode="markers",
             marker={
                 "size": 8,
-                "color": "rgba(88,86,214,0.95)",  # core
+                "color": "rgba(255,45,85,0.95)",  # core
                 "opacity": 1.0,
             },
             text=top["City"],
@@ -2107,7 +2140,7 @@ def main() -> None:
     product_level, margin_segments = classify_products_by_margin(base_df)
 
     # Financial KPI row (4 cards, tight)
-    fin_monthly = monthly_fin_kpis(base_df).tail(12)
+    fin_monthly = monthly_fin_kpis(view).tail(12)
     if fin_monthly.empty:
         k1, k2, k3, k4 = st.columns([1, 1, 1, 1], gap="small")
         with k1:
