@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import mimetypes
 from datetime import timedelta
 from pathlib import Path
 
@@ -34,51 +36,73 @@ def _resolve_default_data_path() -> str:
 
 DEFAULT_PATH = _resolve_default_data_path()
 
+
+def _resolve_office_background_uri() -> str:
+    """Embed a user-provided office background as a data URI for Streamlit CSS."""
+    here = Path(__file__).resolve().parent
+    candidates = [
+        here / "assets" / "office-bg.png",
+        here / "assets" / "office-bg.jpg",
+        Path(
+            r"C:\Users\28172\.cursor\projects\c-Users-28172-Desktop-bike-sales-dashboard-main-bike-sales-dashboard-main\assets\c__Users_28172_AppData_Roaming_Cursor_User_workspaceStorage_fd405c5d745cdbce913603f6bb3c5a37_images_Gemini_Generated_Image_ycuy5xycuy5xycuy-26ba2454-b994-488d-9a17-6e8050bd9345.png"
+        ),
+    ]
+    for path in candidates:
+        if path.exists():
+            mime = mimetypes.guess_type(path.name)[0] or "image/png"
+            data = base64.b64encode(path.read_bytes()).decode("ascii")
+            return f"data:{mime};base64,{data}"
+    return ""
+
+
+OFFICE_BG_URI = _resolve_office_background_uri()
+
 APPLE_GLOBAL_CSS = """
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&display=swap');
   :root{
-    --bg: #F5F3EF;
+    --bg: #172334;
     --text: #111827;
     --muted: rgba(17,24,39,0.60);
+    --office-ink: #102338;
+    --office-muted: rgba(16,35,56,0.62);
+    --office-blue: #2F5870;
+    --office-aqua: #2E6F73;
+    --office-mint: #4F7569;
+    --office-sun: #A7774B;
     --apple-blue: #FF7A33;
     --apple-indigo: #3DD1A8;
     --apple-purple: #FF6491;
     --apple-pink: #FFBC2E;
     --apple-orange: #FF5A5A;
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: 1px solid rgba(0,0,0,0.05);
-    --glass-shadow: 0 8px 30px rgba(0,0,0,0.04);
+    --glass-bg: rgba(255, 255, 255, 0.15);
+    --glass-border: 1px solid rgba(255,255,255,0.34);
+    --glass-shadow: 0 18px 48px rgba(15,23,42,0.22);
   }
 
-  html, body, [data-testid="stAppViewContainer"]{
+  html, body, .stApp, [data-testid="stAppViewContainer"]{
     background: var(--bg) !important;
     color: var(--text) !important;
     font-family: Inter, -apple-system, Segoe UI, sans-serif !important;
     font-weight: 400 !important;
   }
 
-  /* Apple-like texture on the main canvas (stronger + applied to inner main too) */
+  /* High-rise office backdrop: real uploaded office image + subtle glass tint. */
+  .stApp,
   [data-testid="stAppViewContainer"],
   [data-testid="stAppViewContainer"] section.main{
     background-color: var(--bg) !important;
     background-image:
-      radial-gradient(circle at 12px 12px, rgba(255,140,66,0.075) 1.2px, rgba(0,0,0,0) 1.35px),
-      radial-gradient(circle at 20px 20px, rgba(255,140,66,0.032) 1.05px, rgba(0,0,0,0) 1.2px),
-      /* Large color blobs for glassmorphism refraction (tropical mix, no blue-purple) */
-      radial-gradient(circle at 15% 25%, rgba(60,210,170,0.20), rgba(0,0,0,0) 42%),
-      radial-gradient(circle at 85% 35%, rgba(255,120,50,0.16), rgba(0,0,0,0) 48%),
-      radial-gradient(circle at 50% 85%, rgba(255,100,140,0.13), rgba(0,0,0,0) 45%),
-      radial-gradient(circle at 20% 10%, rgba(60,210,170,0.12), rgba(0,0,0,0) 46%),
-      radial-gradient(circle at 86% 12%, rgba(255,150,50,0.08), rgba(0,0,0,0) 44%),
-      radial-gradient(circle at 12% 88%, rgba(255,190,60,0.09), rgba(0,0,0,0) 52%),
-      radial-gradient(circle at 92% 80%, rgba(255,120,100,0.05), rgba(0,0,0,0) 54%),
-      linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.00) 58%) !important;
-    background-size: 24px 24px, 28px 28px, auto, auto, auto, auto, auto, auto, auto, auto !important;
+      radial-gradient(ellipse 56% 42% at 78% 12%, rgba(196,238,255,0.20), rgba(196,238,255,0.00) 66%),
+      radial-gradient(ellipse 52% 38% at 18% 72%, rgba(68,170,170,0.10), rgba(68,170,170,0.00) 70%),
+      linear-gradient(180deg, rgba(236,248,255,0.10), rgba(15,31,48,0.16)),
+      __OFFICE_BG_LAYER__ !important;
+    background-size: auto, auto, auto, cover !important;
     background-attachment: fixed !important;
-    background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat !important;
-    filter: saturate(0.92) !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
   }
 
   /* Remove Streamlit chrome (keep sidebar toggle available) */
@@ -143,11 +167,13 @@ APPLE_GLOBAL_CSS = """
     transform: translateX(-50%);
     padding: 8px 14px;
     border-radius: 999px;
-    background: rgba(255,255,255,0.70);
-    border: 1px solid rgba(17,24,39,0.10);
-    box-shadow: 0 10px 24px rgba(17,24,39,0.08);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.26);
+    border: 1px solid rgba(255,255,255,0.38);
+    box-shadow:
+      0 10px 28px rgba(15,23,42,0.12),
+      inset 0 1px 0 rgba(255,255,255,0.52);
+    backdrop-filter: blur(12px) saturate(1.05);
+    -webkit-backdrop-filter: blur(12px) saturate(1.05);
     font-family: Inter, -apple-system, Segoe UI, sans-serif;
     font-weight: 700;
     font-size: 12px;
@@ -168,64 +194,89 @@ APPLE_GLOBAL_CSS = """
   }
   div[data-testid="stHorizontalBlock"]{ gap: 1rem !important; }
 
-  /* Sidebar (clean, minimal) */
+  /* Sidebar: same cool frosted-glass language as the dashboard cards. */
   section[data-testid="stSidebar"]{
-    background: rgba(245,243,239,0.75) !important;
-    border-right: 1px solid rgba(17,24,39,0.08) !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.18) !important;
+    border-right: 1px solid rgba(255,255,255,0.28) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.42),
+      18px 0 42px rgba(15,23,42,0.18) !important;
+    backdrop-filter: blur(16px) saturate(1.04);
+    -webkit-backdrop-filter: blur(16px) saturate(1.04);
     position: relative;
     overflow: hidden;
-    /* Cute pattern: subtle dots + soft gradients (tropical mix) */
     background-image:
-      radial-gradient(circle at 10px 10px, rgba(60,210,170,0.09) 1.2px, rgba(0,0,0,0) 1.3px),
-      radial-gradient(circle at 18px 18px, rgba(255,140,50,0.07) 1.0px, rgba(0,0,0,0) 1.1px),
-      linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.62));
-    background-size: 22px 22px, 26px 26px, auto;
+      radial-gradient(ellipse 90% 36% at 55% 7%, rgba(255,255,255,0.34), rgba(255,255,255,0.00) 70%),
+      linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06));
   }
 
-  /* A friendly "blob" sticker in the sidebar */
+  /* Glass edge highlight, aligned with the main dashboard language. */
   section[data-testid="stSidebar"]::before{
     content: "";
     position: absolute;
-    right: -46px;
-    top: 64px;
-    width: 170px;
-    height: 170px;
-    border-radius: 44% 56% 62% 38% / 45% 38% 62% 55%;
-    background: radial-gradient(circle at 30% 30%, rgba(60,210,170,0.40), rgba(255,130,50,0.18) 55%, rgba(0,0,0,0) 72%);
-    filter: blur(0.2px);
-    opacity: 0.95;
+    left: 14px;
+    right: 14px;
+    top: 0;
+    width: auto;
+    height: 1px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.00), rgba(255,255,255,0.70) 32%, rgba(255,255,255,0.22) 72%, rgba(255,255,255,0.00));
+    opacity: 1;
     pointer-events: none;
   }
   section[data-testid="stSidebar"]::after{
     content: "";
     position: absolute;
-    left: -40px;
-    bottom: 90px;
-    width: 140px;
-    height: 140px;
-    border-radius: 58% 42% 50% 50% / 40% 58% 42% 60%;
-    background: radial-gradient(circle at 40% 35%, rgba(255,100,140,0.24), rgba(60,210,170,0.14) 58%, rgba(0,0,0,0) 74%);
-    opacity: 0.85;
+    inset: 0;
+    background:
+      linear-gradient(100deg, rgba(255,255,255,0.18), rgba(255,255,255,0.00) 38%),
+      radial-gradient(ellipse 62% 30% at 70% 18%, rgba(255,220,170,0.20), rgba(255,220,170,0.00) 72%);
+    opacity: 1;
     pointer-events: none;
   }
   section[data-testid="stSidebar"] .block-container{ padding-top: 1.25rem; }
 
-  /* Controls: iOS-like neutral fields (no blue fills) */
+  /* Controls: synced with the translucent dashboard cards. */
   section[data-testid="stSidebar"] [data-baseweb="select"] > div,
   section[data-testid="stSidebar"] [data-baseweb="input"] > div{
-    background: rgba(255,255,255,0.88) !important;
-    border: 1px solid rgba(17,24,39,0.10) !important;
+    background: rgba(255,255,255,0.46) !important;
+    border: 1px solid rgba(255,255,255,0.46) !important;
     border-radius: 16px !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+    box-shadow:
+      0 8px 22px rgba(15,23,42,0.08),
+      inset 0 1px 0 rgba(255,255,255,0.50) !important;
+    backdrop-filter: blur(10px) saturate(1.04);
+    -webkit-backdrop-filter: blur(10px) saturate(1.04);
+    font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.005em !important;
+    color: var(--office-ink) !important;
+  }
+  section[data-testid="stSidebar"] input,
+  section[data-testid="stSidebar"] [data-baseweb="input"] input{
+    font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif !important;
+    font-weight: 800 !important;
+    color: var(--office-ink) !important;
+    letter-spacing: 0.005em !important;
+  }
+  section[data-testid="stSidebar"] input::placeholder{
+    font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif !important;
+    font-weight: 700 !important;
+    color: rgba(16,35,56,0.42) !important;
+  }
+  section[data-testid="stSidebar"] label,
+  section[data-testid="stSidebar"] p{
+    color: rgba(16,35,56,0.72) !important;
   }
   section[data-testid="stSidebar"] [data-baseweb="tag"]{
-    background: rgba(17,24,39,0.06) !important;
-    border: 1px solid rgba(17,24,39,0.10) !important;
+    background: rgba(255,255,255,0.34) !important;
+    border: 1px solid rgba(255,255,255,0.42) !important;
     color: rgba(17,24,39,0.80) !important;
     border-radius: 999px !important;
-    font-weight: 650 !important;
+    font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.005em !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.38) !important;
   }
   section[data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within,
   section[data-testid="stSidebar"] [data-baseweb="input"] > div:focus-within{
@@ -237,31 +288,47 @@ APPLE_GLOBAL_CSS = """
     background: var(--glass-bg);
     border-radius: 24px;
     border: var(--glass-border);
-    box-shadow: var(--glass-shadow);
+    box-shadow:
+      var(--glass-shadow),
+      inset 0 1px 0 rgba(255,255,255,0.48),
+      inset 0 -1px 0 rgba(255,255,255,0.10);
     padding: 24px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(13px) saturate(1.06);
+    -webkit-backdrop-filter: blur(13px) saturate(1.06);
+    position: relative;
+    overflow: hidden;
+  }
+  .apple-card::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background:
+      linear-gradient(112deg, rgba(255,255,255,0.40), rgba(255,255,255,0.06) 17%, rgba(255,255,255,0.00) 38%),
+      linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.00) 42%);
+    mix-blend-mode: screen;
+    opacity: 0.62;
   }
 
   /* Card containers via st.container(key=...) */
   div[class*="st-key-card_"]{
-    /* Glassmorphism: highly transparent, airy padding, content appears to float */
-    background: rgba(255,255,255,0.20);
+    /* Ultra-thin frosted glass: transparent enough for the office skyline to show through. */
+    background: rgba(255,255,255,0.13);
     background-image:
-      radial-gradient(circle at 24px 26px, rgba(255,140,66,0.04) 1.1px, rgba(0,0,0,0) 1.2px),
-      radial-gradient(circle at 16px 18px, rgba(255,140,66,0.03) 1.0px, rgba(0,0,0,0) 1.1px),
-      linear-gradient(135deg, rgba(255,140,66,0.04), rgba(255,140,66,0.02) 55%, rgba(255,255,255,0.00) 100%),
-      radial-gradient(circle at 18% 38%, rgba(255,255,255,0.30), rgba(255,255,255,0.0) 55%),
-      radial-gradient(circle at 72% 18%, rgba(255,255,255,0.20), rgba(255,255,255,0.0) 58%),
-      linear-gradient(180deg, rgba(255,255,255,0.15), rgba(255,255,255,0.00) 55%);
-    background-size: 22px 22px, 26px 26px, auto, auto, auto, auto;
-    background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.25);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+      radial-gradient(ellipse 70% 34% at 24% 0%, rgba(255,255,255,0.34), rgba(255,255,255,0.00) 68%),
+      radial-gradient(ellipse 54% 38% at 86% 18%, rgba(255,255,255,0.16), rgba(255,255,255,0.00) 66%),
+      linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.04) 58%);
+    background-size: auto;
+    background-repeat: no-repeat;
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,0.34);
+    box-shadow:
+      0 18px 46px rgba(15,23,42,0.18),
+      inset 0 1px 0 rgba(255,255,255,0.50),
+      inset 0 -1px 0 rgba(255,255,255,0.10);
     padding: 28px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(13px) saturate(1.06);
+    -webkit-backdrop-filter: blur(13px) saturate(1.06);
     overflow: hidden;
     position: relative;
   }
@@ -274,9 +341,21 @@ APPLE_GLOBAL_CSS = """
     left: 24px;
     right: 24px;
     height: 1px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.00), rgba(255,255,255,0.50) 25%, rgba(255,255,255,0.20) 50%, rgba(255,255,255,0.00) 75%);
+    background: linear-gradient(90deg, rgba(255,255,255,0.00), rgba(255,255,255,0.86) 25%, rgba(255,255,255,0.32) 58%, rgba(255,255,255,0.00) 82%);
     border-radius: 0 0 999px 999px;
     pointer-events: none;
+  }
+  /* Directional office-light reflection across the glass surface. */
+  div[class*="st-key-card_"]::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background:
+      linear-gradient(112deg, rgba(255,255,255,0.34), rgba(255,255,255,0.05) 18%, rgba(255,255,255,0.00) 38%),
+      linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.00) 45%);
+    mix-blend-mode: screen;
+    opacity: 0.58;
   }
 
   div[class*="st-key-card_"] > div{
@@ -286,29 +365,33 @@ APPLE_GLOBAL_CSS = """
   /* Chart content area: nearly invisible so glass card shows through */
   div[data-testid="stVerticalBlock"][class*="_plotwrap"],
   .share-plot-wrap{
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.18);
     border-radius: 16px;
     padding: 16px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.20);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.28),
+      inset 0 -1px 0 rgba(255,255,255,0.08);
     overflow: hidden;
   }
   div[data-testid="stVerticalBlock"][class*="_plotwrap"] > div{ padding: 0 !important; }
 
   /* Categories treemap: glassmorphism, aligned with other large cards */
   div.st-key-card_mix{
-    box-shadow: 0 4px 12px rgba(0,0,0,0.10) !important;
-    border: 1px solid rgba(255,255,255,0.25) !important;
-    border-radius: 20px !important;
-    background: rgba(255, 255, 255, 0.20) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
+    box-shadow:
+      0 18px 46px rgba(15,23,42,0.18),
+      inset 0 1px 0 rgba(255,255,255,0.50) !important;
+    border: 1px solid rgba(255,255,255,0.34) !important;
+    border-radius: 22px !important;
+    background: rgba(255, 255, 255, 0.13) !important;
+    backdrop-filter: blur(13px) saturate(1.06) !important;
+    -webkit-backdrop-filter: blur(13px) saturate(1.06) !important;
     overflow: hidden !important;
     position: relative !important;
     /* inner glow + soft gradient for "jelly" */
     background-image:
-      radial-gradient(circle at 18% 12%, rgba(255,255,255,0.35), rgba(255,255,255,0.06) 42%, rgba(255,255,255,0.00) 70%),
-      linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08)) !important;
+      radial-gradient(ellipse 70% 34% at 24% 0%, rgba(255,255,255,0.34), rgba(255,255,255,0.00) 68%),
+      linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.04)) !important;
   }
 
   /* Row 2 alignment: Trend + Share */
@@ -366,10 +449,11 @@ APPLE_GLOBAL_CSS = """
 
   .apple-title{
     font-size: 1.18rem;
-    font-weight: 600;
+    font-family: Inter, -apple-system, Segoe UI, sans-serif;
+    font-weight: 800;
     letter-spacing: 0.01em;
     margin: 0 0 10px 0;
-    color: var(--text);
+    color: var(--office-ink);
     /* Tiny neon edge (Apple subtle) */
     text-shadow:
       0 0 0.6px rgba(255,255,255,0.55),
@@ -379,8 +463,9 @@ APPLE_GLOBAL_CSS = """
   .apple-subtitle{
     margin: -2px 0 0 0;
     font-size: 0.85rem;
-    color: var(--muted);
-    font-weight: 400;
+    color: var(--office-muted);
+    font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif;
+    font-weight: 700;
   }
 
   /* KPI text */
@@ -429,15 +514,24 @@ APPLE_GLOBAL_CSS = """
     flex: 0 0 auto;
   }
 
-  /* Financial KPI card (Control Center style) */
+  /* Financial KPI card: crisp print on ultra-thin frosted glass. */
   .fin-kpi{
     height: 140px;
     position: relative;
     overflow: hidden;
-    border-radius: 24px;
-    background: rgba(255,255,255,0.80);
-    border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+    border-radius: 22px;
+    background: rgba(255,255,255,0.15);
+    background-image:
+      linear-gradient(112deg, rgba(255,255,255,0.34), rgba(255,255,255,0.06) 18%, rgba(255,255,255,0.00) 40%),
+      radial-gradient(ellipse 70% 34% at 22% 0%, rgba(255,255,255,0.30), rgba(255,255,255,0.00) 68%),
+      linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.04));
+    border: 1px solid rgba(255,255,255,0.34);
+    box-shadow:
+      0 16px 42px rgba(15,23,42,0.18),
+      inset 0 1px 0 rgba(255,255,255,0.52),
+      inset 0 -1px 0 rgba(255,255,255,0.10);
+    backdrop-filter: blur(13px) saturate(1.06);
+    -webkit-backdrop-filter: blur(13px) saturate(1.06);
     padding: 18px 18px 14px 18px;
   }
   .fin-kpi .spark{
@@ -462,9 +556,11 @@ APPLE_GLOBAL_CSS = """
     display:flex;
     align-items:center;
     justify-content:center;
-    background: rgba(0,0,0,0.04);
-    border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+    background: rgba(255,255,255,0.24);
+    border: 1px solid rgba(255,255,255,0.32);
+    box-shadow:
+      0 6px 18px rgba(15,23,42,0.08),
+      inset 0 1px 0 rgba(255,255,255,0.42);
     font-size: 1.05rem;
     flex: 0 0 auto;
   }
@@ -488,8 +584,8 @@ APPLE_GLOBAL_CSS = """
     font-weight: 800;
     padding: 4px 10px;
     border-radius: 999px;
-    border: 1px solid rgba(0,0,0,0.06);
-    background: rgba(251,251,253,0.75);
+    border: 1px solid rgba(255,255,255,0.36);
+    background: rgba(255,255,255,0.24);
     color: rgba(17,24,39,0.65);
   }
   .fin-kpi .trend.up{
@@ -517,8 +613,8 @@ APPLE_GLOBAL_CSS = """
     width: 28px;
     height: 28px;
     border-radius: 999px;
-    border: 1px solid rgba(17,24,39,0.10);
-    background: rgba(242,242,247,0.90);
+    border: 1px solid rgba(255,255,255,0.34);
+    background: rgba(255,255,255,0.22);
     color: rgba(17,24,39,0.65);
     display:flex;
     align-items:center;
@@ -543,17 +639,19 @@ APPLE_GLOBAL_CSS = """
     width: 38px;
     height: 38px;
     border-radius: 14px;
-    border: 1px solid rgba(17,24,39,0.10);
-    background: rgba(255,255,255,0.70);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+    border: 1px solid rgba(255,255,255,0.38);
+    background: rgba(255,255,255,0.22);
+    box-shadow:
+      0 8px 18px rgba(15,23,42,0.12),
+      inset 0 1px 0 rgba(255,255,255,0.46);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 18px;
     line-height: 1;
     user-select: none;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px) saturate(1.05);
+    -webkit-backdrop-filter: blur(12px) saturate(1.05);
     opacity: 0.96;
   }
   div.st-key-share_icon_row{
@@ -621,30 +719,42 @@ APPLE_GLOBAL_CSS = """
     align-items:center;
     gap: 12px;
     padding: 8px 0;
+    font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif;
   }
   .cat-name{
-    font-weight: 600;
-    color: rgba(17,24,39,0.80);
+    font-weight: 800;
+    color: rgba(228,246,255,0.92);
     font-size: 0.95rem;
+    text-shadow:
+      0 0 8px rgba(98,168,190,0.26),
+      0 1px 0 rgba(255,255,255,0.20);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .cat-delta{
-    font-weight: 700;
+    font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif;
+    font-weight: 900;
     font-size: 0.90rem;
     text-align: right;
-    color: rgba(17,24,39,0.55);
+    color: rgba(218,240,249,0.82);
+    text-shadow: 0 0 8px rgba(98,168,190,0.22);
   }
-  .cat-delta.pos{ color: rgba(61,209,168,0.95); }
-  .cat-delta.neg{ color: rgba(255,100,140,0.95); }
+  .cat-delta.pos{
+    color: rgba(120,236,216,0.98);
+    text-shadow: 0 0 10px rgba(72,196,176,0.36);
+  }
+  .cat-delta.neg{
+    color: rgba(255,165,174,0.96);
+    text-shadow: 0 0 10px rgba(210,92,106,0.30);
+  }
   .cat-dot{
     width: 14px;
     height: 14px;
     border-radius: 999px;
-    background: rgba(255,140,66,0.18);
-    border: 1px solid rgba(255,140,66,0.18);
-    box-shadow: 0 6px 18px rgba(255,140,66,0.10);
+    background: rgba(68,170,170,0.38);
+    border: 1px solid rgba(255,255,255,0.42);
+    box-shadow: 0 6px 18px rgba(68,170,170,0.22), inset 0 1px 0 rgba(255,255,255,0.38);
     margin-right: 8px;
     flex: 0 0 auto;
   }
@@ -652,14 +762,16 @@ APPLE_GLOBAL_CSS = """
     position: relative;
     height: 12px;
     border-radius: 999px;
-    background: rgba(17,24,39,0.08);
+    background: rgba(16,35,56,0.10);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.34);
     overflow: hidden;
   }
   .bar-fill{
     position:absolute;
     left:0; top:0; bottom:0;
     border-radius: 999px;
-    background: rgba(255,140,66,0.55);
+    background: linear-gradient(90deg, rgba(70,126,154,0.68), rgba(68,170,170,0.78));
+    box-shadow: 0 6px 16px rgba(68,170,170,0.20);
   }
   .bar-target{
     position:absolute;
@@ -667,39 +779,61 @@ APPLE_GLOBAL_CSS = """
     width: 2px;
     height: 20px;
     border-radius: 2px;
-    background: rgba(255,140,66,0.70);
-    box-shadow: 0 6px 16px rgba(255,140,66,0.18);
+    background: rgba(214,154,92,0.84);
+    box-shadow: 0 6px 16px rgba(214,154,92,0.24);
   }
   .pct-ring{
     width: 40px;
     height: 40px;
     border-radius: 999px;
     background:
-      conic-gradient(rgba(255,140,66,0.75) var(--p), rgba(17,24,39,0.10) 0);
+      conic-gradient(rgba(122,201,88,0.66) var(--p), rgba(16,35,56,0.08) 0);
     display:flex;
     align-items:center;
     justify-content:center;
+    position: relative;
+    box-shadow:
+      0 8px 18px rgba(122,201,88,0.16),
+      inset 0 2px 4px rgba(255,255,255,0.32),
+      inset 0 -4px 8px rgba(16,35,56,0.08);
   }
   .pct-ring::before{
     content:"";
     width: 30px;
     height: 30px;
     border-radius: 999px;
-    background: rgba(255,255,255,0.72);
-    border: 1px solid rgba(0,0,0,0.04);
+    background: rgba(255,255,255,0.26);
+    border: 1px solid rgba(255,255,255,0.34);
     position:absolute;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.36),
+      inset 0 -3px 8px rgba(16,35,56,0.06);
+  }
+  .pct-ring::after{
+    content:"";
+    position:absolute;
+    left: 9px;
+    top: 7px;
+    width: 18px;
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.36), rgba(255,255,255,0.00));
+    transform: rotate(-18deg);
+    pointer-events:none;
   }
   .pct-text{
     position: relative;
     font-weight: 700;
     font-size: 0.86rem;
-    color: rgba(17,24,39,0.60);
+    color: rgba(232,248,255,0.90);
+    font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif;
+    text-shadow: 0 0 8px rgba(98,168,190,0.28);
   }
 
   /* Mini table (segment summary) */
   .mini-table{
     margin-top: 14px;
-    border-top: 1px solid rgba(0,0,0,0.06);
+    border-top: 1px solid rgba(255,255,255,0.22);
     padding-top: 10px;
   }
   .mini-head, .mini-row{
@@ -711,28 +845,32 @@ APPLE_GLOBAL_CSS = """
   .mini-head{
     font-size: 0.78rem;
     font-weight: 600;
-    color: rgba(17,24,39,0.55);
+    color: rgba(217,239,249,0.72);
+    font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif;
+    text-shadow: 0 0 8px rgba(98,168,190,0.18);
     padding: 4px 0 8px 0;
   }
   .mini-row{
     padding: 8px 0;
-    border-top: 1px solid rgba(0,0,0,0.04);
+    border-top: 1px solid rgba(255,255,255,0.18);
   }
   .seg-pill{
     display:inline-flex;
     align-items:center;
     gap: 8px;
     font-weight: 650;
-    color: rgba(17,24,39,0.78);
+    color: rgba(228,246,255,0.88);
+    font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif;
+    text-shadow: 0 0 8px rgba(98,168,190,0.22);
     font-size: 0.90rem;
   }
   .seg-dot{
     width: 8px; height: 8px; border-radius: 999px;
-    background: rgba(255,140,66,0.65);
-    box-shadow: 0 0 0 4px rgba(255,140,66,0.10);
+    background: rgba(68,170,170,0.82);
+    box-shadow: 0 0 0 4px rgba(68,170,170,0.16);
   }
-  .seg-dot.steady{ background: rgba(61,209,168,0.65); box-shadow: 0 0 0 4px rgba(61,209,168,0.10); }
-  .seg-dot.low{ background: rgba(17,24,39,0.35); box-shadow: 0 0 0 4px rgba(17,24,39,0.06); }
+  .seg-dot.steady{ background: rgba(70,126,154,0.80); box-shadow: 0 0 0 4px rgba(70,126,154,0.16); }
+  .seg-dot.low{ background: rgba(214,154,92,0.80); box-shadow: 0 0 0 4px rgba(214,154,92,0.18); }
 
   /* Responsive: keep it stable */
   @media (max-width: 900px){
@@ -742,36 +880,49 @@ APPLE_GLOBAL_CSS = """
 </style>
 """
 
-APPLE_PALETTE = ["#FF8C42", "#3DD1A8", "#FF6491", "#FFBC2E", "#FF5A5A"]
-COLOR_BLUE = "#3DD1A8"
-COLOR_INDIGO = "#FF8C42"
-COLOR_PURPLE = "#FF6491"
-COLOR_ORANGE = "#FFBC2E"
-COLOR_MINT = "#34C759"
+APPLE_PALETTE = ["#2F5870", "#2E6F73", "#4F7569", "#A7774B", "#8F4952"]
+COLOR_BLUE = "#2E6F73"
+COLOR_INDIGO = "#2F5870"
+COLOR_PURPLE = "#8F4952"
+COLOR_ORANGE = "#A7774B"
+COLOR_MINT = "#4F7569"
 
 # Warm-only palette (orange family) for cohesive glassmorphism
 WARM_TINTS = [
-    "rgba(255,140,66,0.95)",
-    "rgba(255,140,66,0.80)",
-    "rgba(255,140,66,0.65)",
-    "rgba(255,140,66,0.52)",
-    "rgba(255,140,66,0.40)",
-    "rgba(61,209,168,0.55)",
+    "rgba(47,88,112,0.92)",
+    "rgba(46,111,115,0.86)",
+    "rgba(79,117,105,0.78)",
+    "rgba(167,119,75,0.76)",
+    "rgba(88,108,124,0.70)",
+    "rgba(143,73,82,0.64)",
 ]
 
 # Deprecated alias for backwards compatibility
 BLUE_TINTS = WARM_TINTS
 
+# Brighter jelly-glass palette for the Share donut only.
+SHARE_JELLY_TINTS = [
+    "rgba(98,156,190,0.92)",
+    "rgba(88,190,184,0.90)",
+    "rgba(126,210,170,0.86)",
+    "rgba(232,174,96,0.88)",
+    "rgba(190,126,142,0.82)",
+    "rgba(168,186,202,0.78)",
+]
+
+TREND_FRUIT_GREEN_BAR = "rgba(122,201,88,0.34)"
+TREND_FRUIT_GREEN_LINE = "#8FD35F"
+
 PLOTLY_LAYOUT_BASE: dict = {
     "paper_bgcolor": "rgba(0,0,0,0)",
     "plot_bgcolor": "rgba(0,0,0,0)",
-    "font": {"family": "SF Pro Display, Inter, -apple-system, Segoe UI, sans-serif", "color": "#111827"},
+    "font": {"family": "Nunito, Inter, -apple-system, Segoe UI, sans-serif", "color": "#102338"},
     "margin": {"l": 10, "r": 10, "t": 10, "b": 10},
     "showlegend": False,
     "hoverlabel": {
-        "bgcolor": "rgba(255,255,255,0.92)",
-        "bordercolor": "rgba(0,0,0,0.00)",
-        "font": {"family": "SF Pro Display, Inter, -apple-system, Segoe UI, sans-serif", "color": "#111827", "size": 12},
+        "bgcolor": "rgba(255,255,255,0.72)",
+        "bordercolor": "rgba(255,255,255,0.00)",
+        "font": {"family": "Nunito, Inter, -apple-system, Segoe UI, sans-serif", "color": "#102338", "size": 12},
     },
 }
 
@@ -959,8 +1110,22 @@ def render_kpi_card_apple(*, icon: str, title: str, value: str, trend_pct: float
 def apply_apple_style(fig: go.Figure) -> go.Figure:
     fig.update_layout(**PLOTLY_LAYOUT_BASE)
     # Absolute minimalist: no axis lines, no grids, no backgrounds
-    fig.update_xaxes(showgrid=False, zeroline=False, showline=False, ticks="", mirror=False)
-    fig.update_yaxes(showgrid=False, zeroline=False, showline=False, ticks="", mirror=False)
+    fig.update_xaxes(
+        showgrid=False,
+        zeroline=False,
+        showline=False,
+        ticks="",
+        mirror=False,
+        tickfont={"family": "Nunito, Inter, sans-serif", "size": 11, "color": "rgba(16,35,56,0.62)"},
+    )
+    fig.update_yaxes(
+        showgrid=False,
+        zeroline=False,
+        showline=False,
+        ticks="",
+        mirror=False,
+        tickfont={"family": "Nunito, Inter, sans-serif", "size": 11, "color": "rgba(16,35,56,0.62)"},
+    )
     fig.update_layout(showlegend=False, legend={"bgcolor": "rgba(0,0,0,0)"}, bargap=0.70)
 
     # Smooth lines + unify stroke widths
@@ -1070,7 +1235,7 @@ def fig_time_trend(monthly: pd.DataFrame) -> go.Figure:
             x=monthly["Month"],
             y=monthly["Revenue USD"],
             name="Revenue",
-            marker={"color": COLOR_INDIGO, "opacity": 0.18, "line": {"width": 0}},
+            marker={"color": TREND_FRUIT_GREEN_BAR, "opacity": 0.78, "line": {"width": 0}},
             width=18 * 24 * 60 * 60 * 1000,  # ~18 days in ms => narrower month bars
             hovertemplate="Month: %{x|%Y-%m}<br>Revenue: $%{y:,.2f}<extra></extra>",
         ),
@@ -1090,9 +1255,9 @@ def fig_time_trend(monthly: pd.DataFrame) -> go.Figure:
             fillgradient={
                 "type": "vertical",
                 "colorscale": [
-                    [0.0, "rgba(61,209,168,0.22)"],
-                    [0.6, "rgba(61,209,168,0.10)"],
-                    [1.0, "rgba(61,209,168,0.00)"],
+                    [0.0, "rgba(143,211,95,0.30)"],
+                    [0.6, "rgba(143,211,95,0.13)"],
+                    [1.0, "rgba(143,211,95,0.00)"],
                 ],
             },
             hoverinfo="skip",
@@ -1106,7 +1271,7 @@ def fig_time_trend(monthly: pd.DataFrame) -> go.Figure:
             mode="lines",
             line={"color": "rgba(0,0,0,0)", "width": 0},
             fill="tozeroy",
-            fillcolor="rgba(61,209,168,0.14)",
+            fillcolor="rgba(143,211,95,0.16)",
             hoverinfo="skip",
             name="Profit (fill)",
         )
@@ -1118,7 +1283,7 @@ def fig_time_trend(monthly: pd.DataFrame) -> go.Figure:
             y=y,
             name="Profit",
             mode="lines",
-            line={"color": COLOR_BLUE, "width": 4, "shape": "spline"},
+            line={"color": TREND_FRUIT_GREEN_LINE, "width": 4, "shape": "spline"},
             hovertemplate="Month: %{x|%Y-%m}<br>Profit: $%{y:,.2f}<extra></extra>",
         ),
         secondary_y=True,
@@ -1483,9 +1648,9 @@ def render_categories_target_list(*, key: str, df: pd.DataFrame, margin_segments
                     (
                         f"<div class=\"mini-row\">"
                         f"<div><span class=\"seg-pill\"><span class=\"{_dot(seg)}\"></span>{seg}</span></div>"
-                        f"<div style=\"text-align:right; font-weight:650; color:rgba(17,24,39,0.70);\">{cnt:,}</div>"
-                        f"<div style=\"text-align:right; font-weight:650; color:rgba(17,24,39,0.70);\">{_fmt_money_short(rev)}</div>"
-                        f"<div style=\"text-align:right; font-weight:650; color:rgba(17,24,39,0.70);\">{_fmt_pct(am)}</div>"
+                        f"<div style=\"text-align:right; font-weight:750; color:rgba(228,246,255,0.86); text-shadow:0 0 8px rgba(98,168,190,0.22);\">{cnt:,}</div>"
+                        f"<div style=\"text-align:right; font-weight:750; color:rgba(228,246,255,0.86); text-shadow:0 0 8px rgba(98,168,190,0.22);\">{_fmt_money_short(rev)}</div>"
+                        f"<div style=\"text-align:right; font-weight:750; color:rgba(228,246,255,0.86); text-shadow:0 0 8px rgba(98,168,190,0.22);\">{_fmt_pct(am)}</div>"
                         f"</div>"
                     )
                 )
@@ -1525,20 +1690,22 @@ def fig_share_donut(df: pd.DataFrame, *, dim: str | None = None) -> go.Figure:
         values="Revenue USD",
         names=dim,
         hole=0.70,
-        color_discrete_sequence=BLUE_TINTS,
+        color_discrete_sequence=SHARE_JELLY_TINTS,
     )
     fig.update_traces(
         textinfo="label",
         textposition="inside",
         insidetextorientation="tangential",
         textfont={
-            "family": "Fraunces, SF Pro Display, Inter, -apple-system, Segoe UI, sans-serif",
-            "size": 14,
-            "color": "rgba(17,24,39,0.82)",
+            "family": "Nunito, Inter, -apple-system, Segoe UI, sans-serif",
+            "size": 13,
+            "color": "rgba(13,31,49,0.86)",
         },
         texttemplate="<b>%{label}</b>",
         hovertemplate=f"{dim}: %{{label}}<br>Revenue: $%{{value:,.2f}}<br>Share: %{{percent}}<extra></extra>",
-        marker={"line": {"width": 0}},
+        marker={"line": {"width": 2, "color": "rgba(255,255,255,0.34)"}},
+        opacity=0.80,
+        pull=[0.012, 0.008, 0.006, 0.004, 0.002, 0.0][: len(agg)],
     )
     # Strong, visible nudge: shrink domain and shift up-left, then re-apply after styling
     nudge_domain = {"x": [0.00, 0.72], "y": [0.22, 0.96]}
@@ -1979,7 +2146,12 @@ def render_chart_card(*, key: str, title: str, subtitle: str, fig: go.Figure) ->
 def main() -> None:
     st.set_page_config(page_title="Global Bike Sales Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-    st.markdown(APPLE_GLOBAL_CSS, unsafe_allow_html=True)
+    office_bg_layer = (
+        f"url('{OFFICE_BG_URI}')"
+        if OFFICE_BG_URI
+        else "linear-gradient(120deg, #e6eff7 0%, #bfd0df 34%, #8298ad 61%, #27394f 100%)"
+    )
+    st.markdown(APPLE_GLOBAL_CSS.replace("__OFFICE_BG_LAYER__", office_bg_layer), unsafe_allow_html=True)
     st.markdown(
         """
         <div style="display:flex; align-items:baseline; gap:12px; margin-bottom: 14px;">
@@ -2003,9 +2175,9 @@ def main() -> None:
     with st.sidebar:
         st.markdown(
             """
-            <div style="padding: 10px 12px; border: 1px solid rgba(17,24,39,0.10); border-radius: 16px;
-                        background: rgba(255,255,255,0.65); box-shadow: 0 10px 24px rgba(17,24,39,0.06);
-                        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+            <div style="padding: 10px 12px; border: 1px solid rgba(255,255,255,0.42); border-radius: 16px;
+                        background: rgba(255,255,255,0.32); box-shadow: 0 12px 28px rgba(15,23,42,0.10), inset 0 1px 0 rgba(255,255,255,0.44);
+                        backdrop-filter: blur(12px) saturate(1.04); -webkit-backdrop-filter: blur(12px) saturate(1.04);">
               <div style="font-size: 0.78rem; font-weight: 800; color: rgba(17,24,39,0.55); letter-spacing: 0.02em;">
                 Developer
               </div>
