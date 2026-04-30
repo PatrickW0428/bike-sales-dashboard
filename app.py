@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import base64
+import html
 import mimetypes
-from datetime import timedelta
+import random
+import time
+from io import BytesIO
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -11,9 +15,21 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import streamlit as st
 import streamlit.components.v1 as components
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from plotly.subplots import make_subplots
 
 from data_prep import clean_sales_orders, load_sales_orders
+
+try:
+    from streamlit_autorefresh import st_autorefresh
+except Exception:  # pragma: no cover - fallback for older environments.
+    try:
+        from streamlit_extras.st_autorefresh import st_autorefresh
+    except Exception:
+        st_autorefresh = None
 
 
 def _resolve_default_data_path() -> str:
@@ -877,6 +893,141 @@ APPLE_GLOBAL_CSS = """
     .block-container{ padding-left: 12px; padding-right: 12px; }
     div[data-testid="stHorizontalBlock"]{ gap: 1rem !important; }
   }
+  @media (max-width: 760px){
+    button[role="tab"]{
+      padding: 8px 12px !important;
+      min-height: 38px !important;
+    }
+    button[role="tab"] p{
+      font-size: 0.88rem !important;
+    }
+    .apple-title{
+      font-size: 1.02rem;
+    }
+    .fin-kpi .value{
+      font-size: 1.72rem;
+    }
+  }
+
+  /* Make the three website tabs feel like primary navigation. */
+  div[data-baseweb="tab-list"]{
+    gap: 10px !important;
+    padding: 6px !important;
+    border-radius: 999px !important;
+    background: rgba(255,255,255,0.18) !important;
+    border: 1px solid rgba(255,255,255,0.28) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.36), 0 12px 28px rgba(15,23,42,0.10) !important;
+    backdrop-filter: blur(12px) saturate(1.06);
+    -webkit-backdrop-filter: blur(12px) saturate(1.06);
+    margin-bottom: 16px !important;
+  }
+  button[role="tab"]{
+    border-radius: 999px !important;
+    padding: 10px 18px !important;
+    min-height: 42px !important;
+  }
+  button[role="tab"] p{
+    font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif !important;
+    font-size: 1.02rem !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.01em !important;
+    color: rgba(16,35,56,0.66) !important;
+  }
+  button[role="tab"][aria-selected="true"]{
+    background: rgba(255,255,255,0.42) !important;
+    box-shadow: 0 8px 20px rgba(15,23,42,0.10), inset 0 1px 0 rgba(255,255,255,0.52) !important;
+  }
+  button[role="tab"][aria-selected="true"] p{
+    color: rgba(17,24,39,0.92) !important;
+  }
+
+  .live-panel{
+    margin: 0 0 14px 0;
+    padding: 14px 16px;
+    border-radius: 22px;
+    background: rgba(255,255,255,0.16);
+    border: 1px solid rgba(255,255,255,0.34);
+    box-shadow: 0 16px 40px rgba(15,23,42,0.16), inset 0 1px 0 rgba(255,255,255,0.48);
+    backdrop-filter: blur(13px) saturate(1.06);
+    -webkit-backdrop-filter: blur(13px) saturate(1.06);
+  }
+  .live-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .live-title{
+    display:flex;
+    align-items:center;
+    gap: 9px;
+    font-weight: 900;
+    color: rgba(17,24,39,0.88);
+    letter-spacing: -0.01em;
+  }
+  .live-dot{
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: #3DD1A8;
+    box-shadow: 0 0 0 0 rgba(61,209,168,0.52);
+    animation: livePulse 1.35s ease-out infinite;
+  }
+  @keyframes livePulse{
+    0%{ box-shadow: 0 0 0 0 rgba(61,209,168,0.52); }
+    70%{ box-shadow: 0 0 0 10px rgba(61,209,168,0.00); }
+    100%{ box-shadow: 0 0 0 0 rgba(61,209,168,0.00); }
+  }
+  .live-meta{
+    font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: rgba(16,35,56,0.58);
+  }
+  .live-feed{
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .live-order{
+    border-radius: 16px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.24);
+    border: 1px solid rgba(255,255,255,0.34);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.42);
+  }
+  .live-order-top{
+    display:flex;
+    justify-content:space-between;
+    gap: 10px;
+    color: rgba(16,35,56,0.54);
+    font-size: 0.76rem;
+    font-weight: 800;
+  }
+  .live-order-main{
+    margin-top: 6px;
+    display:flex;
+    justify-content:space-between;
+    gap: 12px;
+    align-items:flex-end;
+  }
+  .live-order-name{
+    color: rgba(17,24,39,0.82);
+    font-weight: 900;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .live-order-value{
+    color: rgba(46,111,115,0.96);
+    font-size: 1.08rem;
+    font-weight: 950;
+    white-space: nowrap;
+  }
+  @media (max-width: 900px){
+    .live-feed{ grid-template-columns: 1fr; }
+  }
 </style>
 """
 
@@ -910,8 +1061,8 @@ SHARE_JELLY_TINTS = [
     "rgba(168,186,202,0.78)",
 ]
 
-TREND_FRUIT_GREEN_BAR = "rgba(122,201,88,0.34)"
-TREND_FRUIT_GREEN_LINE = "#8FD35F"
+TREND_FRUIT_GREEN_BAR = "rgba(61,209,168,0.34)"
+TREND_FRUIT_GREEN_LINE = "#3DD1A8"
 
 PLOTLY_LAYOUT_BASE: dict = {
     "paper_bgcolor": "rgba(0,0,0,0)",
@@ -931,6 +1082,282 @@ PLOTLY_LAYOUT_BASE: dict = {
 def get_clean_data(path: str) -> pd.DataFrame:
     raw = load_sales_orders(path)
     return clean_sales_orders(raw)
+
+
+LIVE_DEMO_MAX_ROWS = 120
+LIVE_REFRESH_SEC = 3
+DATA_SOURCE_MODES = [
+    "Demo Stream",
+    "Shopify Webhook",
+    "Square POS",
+    "Lightspeed Retail",
+    "CSV / Excel Upload",
+]
+
+
+def _live_state_key(name: str) -> str:
+    return f"live_demo_{name}"
+
+
+def reset_live_demo_state() -> None:
+    for name in ["rows", "last_tick", "seq"]:
+        st.session_state.pop(_live_state_key(name), None)
+
+
+def get_live_demo_events() -> pd.DataFrame:
+    return pd.DataFrame(st.session_state.get(_live_state_key("rows"), []))
+
+
+def _make_live_order(base_df: pd.DataFrame, *, seq: int, event_time: datetime) -> dict:
+    sample = base_df.sample(1, random_state=seq).iloc[0].to_dict()
+    rng = random.Random(seq + int(event_time.timestamp()))
+
+    source_qty = pd.to_numeric(pd.Series([sample.get("SalesQuantity", 1)]), errors="coerce").iloc[0]
+    base_qty = int(source_qty) if pd.notna(source_qty) and source_qty > 0 else 1
+    qty = max(1, min(12, base_qty + rng.choice([-2, -1, 0, 1, 2, 3])))
+
+    source_revenue = float(sample.get("Revenue USD", 0.0) or 0.0)
+    unit_price = source_revenue / max(base_qty, 1)
+    if not unit_price or pd.isna(unit_price):
+        unit_price = rng.uniform(900.0, 4200.0)
+
+    revenue_usd = round(unit_price * qty * rng.uniform(0.88, 1.18), 2)
+    discount_usd = round(revenue_usd * rng.uniform(0.0, 0.055), 2)
+    costs_usd = round(revenue_usd * rng.uniform(0.52, 0.76), 2)
+    profit = round(revenue_usd - costs_usd, 2)
+
+    order = dict(sample)
+    order.update(
+        {
+            "OrderNumber": f"LIVE-{seq:05d}",
+            "OrderItem": 10,
+            "Date": pd.Timestamp(event_time),
+            "SalesQuantity": qty,
+            "Currency": "USD",
+            "Revenue": revenue_usd,
+            "Discount": discount_usd,
+            "Revenue USD": revenue_usd,
+            "Discount USD": discount_usd,
+            "Costs in USD": costs_usd,
+            "Profit": profit,
+            "Profit Margin": profit / revenue_usd if revenue_usd else float("nan"),
+            "Live Source": rng.choice(["Shopify", "Square POS", "Lightspeed"]),
+            "Live Event Time": pd.Timestamp(event_time),
+        }
+    )
+    return order
+
+
+def apply_live_demo_stream(base_df: pd.DataFrame, *, enabled: bool, interval_sec: int) -> tuple[pd.DataFrame, pd.DataFrame]:
+    if not enabled or base_df.empty:
+        return base_df, pd.DataFrame()
+
+    rows_key = _live_state_key("rows")
+    tick_key = _live_state_key("last_tick")
+    seq_key = _live_state_key("seq")
+
+    st.session_state.setdefault(rows_key, [])
+    st.session_state.setdefault(seq_key, 0)
+
+    now = datetime.now()
+    current_tick = int(time.time() // max(1, interval_sec))
+    last_tick = st.session_state.get(tick_key, current_tick - 3)
+    new_events = max(0, min(current_tick - int(last_tick), 5))
+
+    for offset in range(new_events):
+        st.session_state[seq_key] += 1
+        event_time = now - timedelta(seconds=(new_events - offset - 1) * interval_sec)
+        st.session_state[rows_key].append(
+            _make_live_order(base_df, seq=int(st.session_state[seq_key]), event_time=event_time)
+        )
+
+    st.session_state[tick_key] = current_tick
+    st.session_state[rows_key] = st.session_state[rows_key][-LIVE_DEMO_MAX_ROWS:]
+
+    live_df = pd.DataFrame(st.session_state[rows_key])
+    if live_df.empty:
+        return base_df, live_df
+
+    live_for_dashboard = live_df.reindex(columns=base_df.columns)
+    combined = pd.concat([base_df, live_for_dashboard], ignore_index=True)
+    combined["Date"] = pd.to_datetime(combined["Date"], errors="coerce")
+    return combined, live_df
+
+
+def prepare_live_metric_events(
+    live_events: pd.DataFrame,
+    template_df: pd.DataFrame,
+    *,
+    reference_date,
+    start_date,
+    end_date,
+    search: str,
+    selected_countries: list[str],
+    selected_prodcats: list[str],
+    selected_salesorg: list[str],
+    selected_catdescr: list[str],
+) -> pd.DataFrame:
+    if live_events.empty or template_df.empty:
+        return pd.DataFrame(columns=template_df.columns)
+
+    ref_date = pd.to_datetime(reference_date).date()
+    if ref_date < start_date or ref_date > end_date:
+        return pd.DataFrame(columns=template_df.columns)
+
+    live_metric = live_events.reindex(columns=template_df.columns).copy()
+    live_metric["Date"] = pd.to_datetime(reference_date)
+
+    q = search.strip().lower()
+    if q:
+        search_cols = [c for c in ["CustDescr", "Customer", "ProdDescr", "Product"] if c in live_metric.columns]
+        if search_cols:
+            hay = live_metric[search_cols].astype("string").fillna("")
+            m = False
+            for c in search_cols:
+                m = m | hay[c].str.lower().str.contains(q, na=False)
+            live_metric = live_metric.loc[m].copy()
+
+    if selected_countries and "Country" in live_metric.columns:
+        live_metric = live_metric.loc[live_metric["Country"].astype("string").fillna("Unknown").isin(selected_countries)].copy()
+    if selected_prodcats and "ProdCat" in live_metric.columns:
+        live_metric = live_metric.loc[live_metric["ProdCat"].astype("string").fillna("Unknown").isin(selected_prodcats)].copy()
+    if selected_salesorg and "SalesOrg" in live_metric.columns:
+        live_metric = live_metric.loc[live_metric["SalesOrg"].astype("string").fillna("Unknown").isin(selected_salesorg)].copy()
+    if selected_catdescr and "CatDescr" in live_metric.columns:
+        live_metric = live_metric.loc[live_metric["CatDescr"].astype("string").fillna("Unknown").isin(selected_catdescr)].copy()
+
+    return live_metric
+
+
+def render_live_activity(live_events: pd.DataFrame, *, interval_sec: int) -> None:
+    if live_events.empty:
+        return
+
+    latest = live_events.tail(5).iloc[::-1]
+    total_live_revenue = float(live_events["Revenue USD"].sum()) if "Revenue USD" in live_events.columns else 0.0
+    cards: list[str] = []
+    ticker_items: list[str] = []
+    for idx, (_, row) in enumerate(latest.iterrows()):
+        source = html.escape(str(row.get("Live Source", "Live")))
+        order_no = html.escape(str(row.get("OrderNumber", "")))
+        customer = html.escape(str(row.get("CustDescr", row.get("Customer", "Customer"))))
+        product = html.escape(str(row.get("ProdDescr", row.get("Product", "Product"))))
+        value = _fmt_money_short(float(row.get("Revenue USD", 0.0) or 0.0))
+        event_time = pd.to_datetime(row.get("Live Event Time", row.get("Date", datetime.now()))).strftime("%H:%M:%S")
+        highlight_cls = " live-order-new" if idx == 0 else ""
+        cards.append(
+            f"""
+            <div class="live-order{highlight_cls}">
+              <div class="live-order-top">
+                <span>{source} / {order_no}</span>
+                <span>{event_time}</span>
+              </div>
+              <div class="live-order-main">
+                <div style="min-width:0;">
+                  <div class="live-order-name">{customer}</div>
+                  <div class="live-meta" style="margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{product}</div>
+                </div>
+                <div class="live-order-value">{value}</div>
+              </div>
+            </div>
+            """
+        )
+        ticker_items.append(f"<span class='live-ticker-item'><b>{event_time}</b> {source} / {customer} / {product} / <em>{value}</em></span>")
+
+    ticker_html = "".join(ticker_items + ticker_items)
+    panel_html = f"""
+        <style>
+          .live-panel{{
+            position: relative;
+            overflow: hidden;
+          }}
+          .live-panel::before{{
+            content:"";
+            position:absolute;
+            left:0;
+            top:0;
+            width:100%;
+            height:3px;
+            background: linear-gradient(90deg, rgba(61,209,168,0.95), rgba(255,188,46,0.85), rgba(255,100,145,0.95));
+            transform-origin: left center;
+            animation: liveCountdown {interval_sec}s linear infinite;
+          }}
+          @keyframes liveCountdown{{
+            0%{{ transform: scaleX(1); opacity: 1; }}
+            88%{{ transform: scaleX(0.04); opacity: 0.9; }}
+            100%{{ transform: scaleX(1); opacity: 1; }}
+          }}
+          .live-feed{{
+            grid-template-columns: repeat(5, minmax(190px, 1fr));
+          }}
+          .live-order{{
+            animation: liveFloatIn 520ms cubic-bezier(.2,.8,.2,1) both;
+          }}
+          .live-order-new{{
+            background: rgba(61,209,168,0.18);
+            border-color: rgba(61,209,168,0.42);
+            animation: liveNewOrder 900ms cubic-bezier(.2,.8,.2,1) both, liveGlow 1.8s ease-out 1;
+          }}
+          @keyframes liveFloatIn{{
+            from{{ opacity: 0; transform: translateY(10px) scale(0.985); }}
+            to{{ opacity: 1; transform: translateY(0) scale(1); }}
+          }}
+          @keyframes liveNewOrder{{
+            0%{{ opacity: 0; transform: translateX(-18px) scale(0.96); }}
+            65%{{ opacity: 1; transform: translateX(0) scale(1.025); }}
+            100%{{ opacity: 1; transform: translateX(0) scale(1); }}
+          }}
+          @keyframes liveGlow{{
+            0%{{ box-shadow: 0 0 0 0 rgba(61,209,168,0.52), inset 0 1px 0 rgba(255,255,255,0.42); }}
+            100%{{ box-shadow: 0 0 0 16px rgba(61,209,168,0.00), inset 0 1px 0 rgba(255,255,255,0.42); }}
+          }}
+          .live-ticker{{
+            margin-top: 12px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.28);
+            white-space: nowrap;
+          }}
+          .live-ticker-track{{
+            display: inline-flex;
+            gap: 18px;
+            min-width: 200%;
+            padding: 7px 0;
+            animation: liveTicker 22s linear infinite;
+          }}
+          .live-ticker-item{{
+            color: rgba(16,35,56,0.66);
+            font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif;
+            font-size: 0.80rem;
+            font-weight: 800;
+          }}
+          .live-ticker-item em{{
+            color: rgba(46,111,115,0.98);
+            font-style: normal;
+            font-weight: 950;
+          }}
+          @keyframes liveTicker{{
+            from{{ transform: translateX(0); }}
+            to{{ transform: translateX(-50%); }}
+          }}
+          @media (max-width: 1100px){{
+            .live-feed{{ grid-template-columns: 1fr; }}
+          }}
+        </style>
+        <div class="live-panel">
+          <div class="live-head">
+            <div class="live-title"><span class="live-dot"></span><span>Live order stream</span></div>
+            <div class="live-meta">new data every {interval_sec}s / {len(live_events):,} demo events / {_fmt_money_short(total_live_revenue)} live revenue</div>
+          </div>
+          <div class="live-feed">{''.join(cards)}</div>
+          <div class="live-ticker"><div class="live-ticker-track">{ticker_html}</div></div>
+        </div>
+        """
+    if hasattr(st, "html"):
+        st.html(panel_html)
+    else:
+        components.html(panel_html, height=180)
 
 
 def render_kpi_card(label: str, value: str, *, sub: str | None = None, accent: str = "blue") -> None:
@@ -958,6 +1385,116 @@ def _fmt_pct(x: float) -> str:
     if pd.isna(x):
         return "—"
     return f"{float(x):.2%}"
+
+
+def _segment_label_en(segment: str) -> str:
+    mapping = {
+        "高毛利": "High margin",
+        "稳健": "Steady",
+        "低利": "Low margin",
+        "High margin": "High margin",
+        "Steady": "Steady",
+        "Low margin": "Low margin",
+    }
+    return mapping.get(str(segment), str(segment))
+
+
+def build_executive_summary_pdf(
+    *,
+    total_revenue: float,
+    total_profit: float,
+    margin: float,
+    live_revenue: float,
+    live_order_count: int,
+    avg_live_order: float,
+    latest_order_value: float,
+    top_category_name: str,
+    top_category_revenue: float,
+    segment_rows: list[tuple[str, int, float, float]],
+    recommendations: list[str],
+    data_source_mode: str,
+    generated_at: datetime,
+) -> bytes:
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=42, leftMargin=42, topMargin=42, bottomMargin=42)
+    styles = getSampleStyleSheet()
+    story = [
+        Paragraph("Green Bike Sales Intelligence - Executive Summary", styles["Title"]),
+        Spacer(1, 10),
+        Paragraph(
+            f"Generated at {generated_at.strftime('%Y-%m-%d %H:%M:%S')} using data source mode: {data_source_mode}.",
+            styles["BodyText"],
+        ),
+        Spacer(1, 6),
+        Paragraph(
+            "This PDF summarizes the current live report view, combining historical sales performance with the live metric layer and decision-oriented recommendations.",
+            styles["BodyText"],
+        ),
+        Spacer(1, 14),
+    ]
+
+    metrics = [
+        ["Metric", "Value"],
+        ["Total Revenue", _fmt_money_short(total_revenue)],
+        ["Total Profit", _fmt_money_short(total_profit)],
+        ["Overall Margin", _fmt_pct(margin)],
+        ["Live Revenue", _fmt_money_short(live_revenue)],
+        ["Live Events", f"{live_order_count:,}"],
+        ["Average Live Order", _fmt_money_short(avg_live_order)],
+        ["Latest Order Value", _fmt_money_short(latest_order_value)],
+        ["Top Category", top_category_name],
+        ["Top Category Revenue", _fmt_money_short(top_category_revenue)],
+    ]
+    table = Table(metrics, colWidths=[190, 260])
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1B5E4A")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#C8DCD2")),
+                ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#F4FBF7")),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTNAME", (0, 1), (0, -1), "Helvetica-Bold"),
+                ("PADDING", (0, 0), (-1, -1), 8),
+            ]
+        )
+    )
+    story.extend([table, Spacer(1, 16), Paragraph("Margin Segments", styles["Heading2"])])
+    if segment_rows:
+        seg_data = [["Segment", "Products", "Revenue", "Avg Margin"]]
+        seg_data.extend([[seg, f"{cnt:,}", _fmt_money_short(rev), _fmt_pct(avg_margin)] for seg, cnt, rev, avg_margin in segment_rows])
+        seg_table = Table(seg_data, colWidths=[150, 90, 110, 100])
+        seg_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2E6F73")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#C8DCD2")),
+                    ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#F8FFFB")),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("PADDING", (0, 0), (-1, -1), 7),
+                ]
+            )
+        )
+        story.append(seg_table)
+    else:
+        story.append(Paragraph("No margin segment data is available for the current filter.", styles["BodyText"]))
+
+    story.extend([Spacer(1, 16), Paragraph("Recommended Actions", styles["Heading2"])])
+    for item in recommendations:
+        story.append(Paragraph(f"- {item}", styles["BodyText"]))
+        story.append(Spacer(1, 5))
+
+    story.extend([Spacer(1, 14), Paragraph("Data Methodology", styles["Heading2"])])
+    story.append(
+        Paragraph(
+            "Historical Trend uses the original filtered sales data to preserve continuity. Live orders update the metric layer for KPI, category movement, and report insights; demo events are mapped to the current historical period for comparable reporting.",
+            styles["BodyText"],
+        )
+    )
+
+    doc.build(story)
+    return buffer.getvalue()
 
 
 def _catmull_rom_to_bezier(points: list[tuple[float, float]]) -> str:
@@ -1223,7 +1760,12 @@ def _fmt_int(x: int) -> str:
     return f"{x:,}"
 
 
-def fig_time_trend(monthly: pd.DataFrame) -> go.Figure:
+def fig_time_trend(
+    monthly: pd.DataFrame,
+    *,
+    live_events: pd.DataFrame | None = None,
+    show_live_forecast: bool = False,
+) -> go.Figure:
     """
     Dual-axis trend:
     - Revenue USD: bar (left axis)
@@ -1290,7 +1832,62 @@ def fig_time_trend(monthly: pd.DataFrame) -> go.Figure:
     )
 
     fig.update_layout(autosize=True)
-    return apply_apple_style(fig)
+    fig = apply_apple_style(fig)
+
+    if show_live_forecast and live_events is not None and not live_events.empty and not monthly.empty:
+        trailing = monthly.tail(6).copy()
+        base_revenue = float(trailing["Revenue USD"].mean())
+        base_profit = float(trailing["Profit"].mean())
+        live_revenue = float(live_events.get("Revenue USD", pd.Series(dtype=float)).sum())
+        live_profit = float(live_events.get("Profit", pd.Series(dtype=float)).sum())
+
+        # Keep the prediction consistent with historical scale while still moving with the live stream.
+        revenue_lift = min(live_revenue / base_revenue, 0.18) if base_revenue else 0.0
+        profit_lift = min(live_profit / base_profit, 0.18) if base_profit else 0.0
+        projected_revenue = base_revenue * (1.0 + revenue_lift)
+        projected_profit = base_profit * (1.0 + profit_lift)
+        forecast_month = pd.to_datetime(monthly["Month"].max()) + pd.offsets.MonthBegin(1)
+
+        fig.add_trace(
+            go.Bar(
+                x=[forecast_month],
+                y=[projected_revenue],
+                name="Live forecast revenue",
+                marker={
+                    "color": "rgba(61,209,168,0.34)",
+                    "line": {"width": 1, "color": "rgba(61,209,168,0.82)"},
+                },
+                width=18 * 24 * 60 * 60 * 1000,
+                hovertemplate="Forecast: %{x|%Y-%m}<br>Projected revenue: $%{y:,.2f}<extra></extra>",
+            ),
+            secondary_y=False,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=[monthly["Month"].max(), forecast_month],
+                y=[float(monthly["Profit"].iloc[-1]), projected_profit],
+                name="Live forecast profit",
+                mode="lines+markers",
+                line={"color": "rgba(61,209,168,0.95)", "width": 4, "dash": "dot", "shape": "spline"},
+                marker={"size": 9, "color": "rgba(61,209,168,0.95)"},
+                hovertemplate="Forecast: %{x|%Y-%m}<br>Projected profit: $%{y:,.2f}<extra></extra>",
+            ),
+            secondary_y=True,
+        )
+        fig.add_annotation(
+            x=forecast_month,
+            y=projected_revenue,
+            text="Live forecast",
+            showarrow=True,
+            arrowhead=2,
+            ax=0,
+            ay=-36,
+            font={"size": 12, "color": "rgba(16,35,56,0.72)"},
+            bgcolor="rgba(255,255,255,0.62)",
+            bordercolor="rgba(61,209,168,0.36)",
+        )
+
+    return fig
 
 
 def fig_bubble_map(df: pd.DataFrame, *, location_level: str = "country") -> go.Figure:
@@ -2143,6 +2740,711 @@ def render_chart_card(*, key: str, title: str, subtitle: str, fig: go.Figure) ->
                 st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False, "responsive": True})
 
 
+def render_design_vision_tab(*, live_events: pd.DataFrame, metric_view: pd.DataFrame) -> None:
+    live_revenue = float(live_events["Revenue USD"].sum()) if not live_events.empty and "Revenue USD" in live_events.columns else 0.0
+    total_revenue = float(metric_view["Revenue USD"].sum()) if not metric_view.empty and "Revenue USD" in metric_view.columns else 0.0
+    product_count = int(metric_view["Product"].nunique()) if not metric_view.empty and "Product" in metric_view.columns else 0
+
+    st.html(
+        f"""
+        <style>
+          .green-hero {{
+            position: relative;
+            overflow: hidden;
+            min-height: 420px;
+            border-radius: 30px;
+            padding: 34px;
+            border: 1px solid rgba(255,255,255,0.34);
+            background:
+              radial-gradient(circle at 16% 18%, rgba(61,209,168,0.40), transparent 30%),
+              radial-gradient(circle at 82% 22%, rgba(143,211,95,0.30), transparent 34%),
+              linear-gradient(135deg, rgba(9,44,37,0.88), rgba(25,86,67,0.72), rgba(239,255,248,0.24));
+            box-shadow: 0 22px 58px rgba(5,31,26,0.24), inset 0 1px 0 rgba(255,255,255,0.45);
+            backdrop-filter: blur(14px) saturate(1.08);
+            -webkit-backdrop-filter: blur(14px) saturate(1.08);
+          }}
+          .green-hero::before {{
+            content: "";
+            position: absolute;
+            inset: -40%;
+            background:
+              repeating-linear-gradient(115deg, rgba(255,255,255,0.00) 0 28px, rgba(255,255,255,0.08) 30px 32px),
+              radial-gradient(circle, rgba(61,209,168,0.16), transparent 56%);
+            animation: greenFlow 16s linear infinite;
+          }}
+          .green-hero::after {{
+            content: "🚲";
+            position: absolute;
+            left: -90px;
+            bottom: 34px;
+            font-size: 76px;
+            filter: drop-shadow(0 14px 28px rgba(5,31,26,0.24));
+            animation: bikeRide 11s cubic-bezier(.4,.0,.2,1) infinite;
+          }}
+          @keyframes greenFlow {{
+            from {{ transform: translateX(-4%) translateY(-3%) rotate(0deg); }}
+            to {{ transform: translateX(4%) translateY(3%) rotate(8deg); }}
+          }}
+          @keyframes bikeRide {{
+            0% {{ transform: translateX(0) translateY(0) rotate(-2deg); opacity: 0; }}
+            12% {{ opacity: 1; }}
+            78% {{ opacity: 1; }}
+            100% {{ transform: translateX(calc(100vw + 220px)) translateY(-18px) rotate(3deg); opacity: 0; }}
+          }}
+          .green-hero-content {{
+            position: relative;
+            z-index: 1;
+            max-width: 760px;
+          }}
+          .green-eyebrow {{
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.22);
+            border: 1px solid rgba(255,255,255,0.30);
+            color: rgba(239,255,248,0.92);
+            font-size: 0.78rem;
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+          }}
+          .green-hero-title {{
+            margin-top: 18px;
+            font-size: clamp(2.2rem, 5vw, 4.8rem);
+            line-height: 0.96;
+            font-weight: 950;
+            color: rgba(246,255,250,0.98);
+            letter-spacing: -0.055em;
+          }}
+          .green-hero-copy {{
+            margin-top: 18px;
+            max-width: 660px;
+            font-size: 1.05rem;
+            line-height: 1.65;
+            color: rgba(239,255,248,0.76);
+            font-weight: 750;
+          }}
+          .green-stat-grid {{
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 26px;
+          }}
+          .green-stat {{
+            padding: 14px 16px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.28);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.32);
+          }}
+          .green-stat-label {{
+            color: rgba(239,255,248,0.64);
+            font-size: 0.78rem;
+            font-weight: 850;
+          }}
+          .green-stat-value {{
+            margin-top: 6px;
+            color: rgba(246,255,250,0.98);
+            font-size: 1.35rem;
+            font-weight: 950;
+          }}
+          .vision-grid {{
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+          }}
+          .vision-card {{
+            min-height: 158px;
+            border-radius: 24px;
+            padding: 20px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.32);
+            box-shadow: 0 16px 42px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.46);
+            backdrop-filter: blur(13px) saturate(1.06);
+            -webkit-backdrop-filter: blur(13px) saturate(1.06);
+          }}
+          .vision-card h3 {{
+            margin: 0;
+            color: rgba(17,24,39,0.88);
+            font-weight: 950;
+          }}
+          .vision-card p {{
+            margin: 10px 0 0 0;
+            color: rgba(16,35,56,0.64);
+            line-height: 1.55;
+            font-weight: 750;
+          }}
+          @media (max-width: 900px) {{
+            .green-stat-grid, .vision-grid {{ grid-template-columns: 1fr; }}
+          }}
+        </style>
+        <section class="green-hero">
+          <div class="green-hero-content">
+            <div class="green-eyebrow"><span>Live Mobility Intelligence</span><span>•</span><span>Green Bike</span></div>
+            <div class="green-hero-title">Green Bike Sales Intelligence</div>
+            <div class="green-hero-copy">
+              A real-time executive website for bike sales, margin movement, customer hotspots, and low-friction growth decisions.
+              The visual system blends frosted glass, electric green motion, and live order pulses to make sustainable retail performance feel alive.
+            </div>
+            <div class="green-stat-grid">
+              <div class="green-stat"><div class="green-stat-label">Live Events</div><div class="green-stat-value">{len(live_events):,}</div></div>
+              <div class="green-stat"><div class="green-stat-label">Live Revenue</div><div class="green-stat-value">{_fmt_money_short(live_revenue)}</div></div>
+              <div class="green-stat"><div class="green-stat-label">Tracked Products</div><div class="green-stat-value">{product_count:,}</div></div>
+            </div>
+          </div>
+        </section>
+        """
+    )
+
+    cards = [
+        ("Summary", "A polished data website for monitoring bike sales, category movement, customer concentration, and live operating signals."),
+        ("Vision", "Turn fragmented retail events into green mobility intelligence: faster decisions, cleaner inventory, and sharper category focus."),
+        ("Design Language", "Glassmorphism, deep green gradients, animated bike motion, and live pulses create a premium sustainable-tech feel."),
+    ]
+    cards_html = "".join(f"<div class='vision-card'><h3>{title}</h3><p>{body}</p></div>" for title, body in cards)
+    st.html(f"<div style='height:16px'></div><div class='vision-grid'>{cards_html}</div>")
+
+
+def render_live_report_tab(
+    *,
+    metric_view: pd.DataFrame,
+    live_events: pd.DataFrame,
+    margin_segments: pd.DataFrame,
+    show_trend_forecast: bool,
+    data_source_mode: str,
+    generated_at: datetime,
+) -> None:
+    if metric_view.empty:
+        st.info("No data available for the live report.")
+        return
+
+    total_revenue = float(metric_view["Revenue USD"].sum()) if "Revenue USD" in metric_view.columns else 0.0
+    total_profit = float(metric_view["Profit"].sum()) if "Profit" in metric_view.columns else 0.0
+    margin = total_profit / total_revenue if total_revenue else float("nan")
+    live_revenue = float(live_events["Revenue USD"].sum()) if not live_events.empty and "Revenue USD" in live_events.columns else 0.0
+
+    st.markdown(
+        """
+        <div class="card-header" style="position:relative; z-index:1;">
+          <div>
+            <div class="apple-title" style="margin:0;">Live Visual Report</div>
+            <div class="apple-subtitle">Auto-refreshing executive narrative from the same live metric layer</div>
+          </div>
+          <div class="micro-icon">R</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    r1, r2, r3, r4 = st.columns(4, gap="small")
+    with r1:
+        render_fin_kpi_card(icon="🚲", title="Report Revenue", value=_fmt_money_short(total_revenue), arrow="↗", arrow_cls="up", spark_values=[total_revenue * 0.92, total_revenue * 0.97, total_revenue])
+    with r2:
+        render_fin_kpi_card(icon="🌱", title="Profit", value=_fmt_money_short(total_profit), arrow="↗", arrow_cls="up", spark_values=[total_profit * 0.90, total_profit * 0.96, total_profit])
+    with r3:
+        render_fin_kpi_card(icon="％", title="Margin", value=_fmt_pct(margin), arrow="↗", arrow_cls="up", spark_values=[max(margin - 0.02, 0), max(margin - 0.01, 0), margin])
+    with r4:
+        render_fin_kpi_card(icon="⚡", title="Live Revenue", value=_fmt_money_short(live_revenue), arrow="↻", arrow_cls="", spark_values=[0, live_revenue * 0.55, live_revenue])
+
+    st.markdown("<div style='height: 14px'></div>", unsafe_allow_html=True)
+
+    cat_col = "CatDescr" if "CatDescr" in metric_view.columns else ("ProdCat" if "ProdCat" in metric_view.columns else None)
+    if cat_col:
+        top_cat = (
+            metric_view.groupby(cat_col, as_index=False)["Revenue USD"]
+            .sum()
+            .sort_values("Revenue USD", ascending=False)
+            .head(5)
+        )
+        fig = px.bar(
+            top_cat,
+            x="Revenue USD",
+            y=cat_col,
+            orientation="h",
+            color="Revenue USD",
+            color_continuous_scale=[(0.0, "rgba(61,209,168,0.24)"), (1.0, "rgba(61,209,168,0.92)")],
+        )
+        fig.update_layout(height=360, coloraxis_showscale=False)
+        render_chart_card(key="report_categories", title="Category Movement", subtitle="Top categories updated by live metric events", fig=apply_apple_style(fig))
+
+    st.markdown("<div style='height: 14px'></div>", unsafe_allow_html=True)
+
+    latest_source_plain = "No active source"
+    latest_order_value = 0.0
+    latest_customer_plain = "No active customer"
+    if not live_events.empty:
+        latest = live_events.iloc[-1]
+        latest_source_plain = str(latest.get("Live Source", "Live"))
+        latest_order_value = float(latest.get("Revenue USD", 0.0) or 0.0)
+        latest_customer_plain = str(latest.get("CustDescr", latest.get("Customer", "Customer")))
+    latest_source = html.escape(latest_source_plain)
+    latest_customer = html.escape(latest_customer_plain)
+
+    live_order_count = int(len(live_events))
+    avg_live_order = live_revenue / live_order_count if live_order_count else 0.0
+    live_share = live_revenue / total_revenue if total_revenue else 0.0
+
+    top_category_plain = "No category"
+    top_category_revenue = 0.0
+    if cat_col:
+        top_category = (
+            metric_view.groupby(cat_col, as_index=False)["Revenue USD"]
+            .sum()
+            .sort_values("Revenue USD", ascending=False)
+            .head(1)
+        )
+        if not top_category.empty:
+            top_category_plain = str(top_category.iloc[0][cat_col])
+            top_category_revenue = float(top_category.iloc[0]["Revenue USD"])
+    top_category_name = html.escape(top_category_plain)
+
+    segment_rows_for_pdf: list[tuple[str, int, float, float]] = []
+    if margin_segments is not None and not margin_segments.empty:
+        seg_rows = []
+        for _, r in margin_segments.head(3).iterrows():
+            seg = _segment_label_en(str(r.get("segment", "Segment")))
+            cnt = int(r.get("product_count", 0))
+            rev = float(r.get("revenue_usd", 0.0))
+            avg_margin = float(r.get("avg_margin", float("nan")))
+            segment_rows_for_pdf.append((seg, cnt, rev, avg_margin))
+            seg_rows.append(
+                f"<li><strong>{html.escape(seg)}</strong>: {cnt:,} products, {_fmt_money_short(rev)} revenue, {_fmt_pct(avg_margin)} avg margin.</li>"
+            )
+        segment_html = "".join(seg_rows)
+    else:
+        segment_html = "<li>No margin segment data is available for the current filter.</li>"
+
+    recommendation_1_plain = (
+        f"Prioritize inventory and marketing support for {top_category_plain}, currently the strongest revenue category in the live metric view."
+        if top_category_revenue > 0
+        else "Keep category investment balanced until a stronger real-time category signal emerges."
+    )
+    recommendation_2_plain = (
+        "Use the live forecast as a directional signal, but keep the main Trend anchored to historical data to avoid overstating short-term order spikes."
+        if show_trend_forecast
+        else "Enable the live forecast when presenting forward-looking scenarios to leadership."
+    )
+    recommendation_3_plain = (
+        f"The latest signal from {latest_source_plain} indicates live demand from {latest_customer_plain}; review recent order mix if similar events repeat."
+        if live_order_count
+        else "Continue collecting live events before making operational changes from the real-time layer."
+    )
+    recommendation_1 = (
+        f"Prioritize inventory and marketing support for <strong>{top_category_name}</strong>, currently the strongest revenue category in the live metric view."
+        if top_category_revenue > 0
+        else "Keep category investment balanced until a stronger real-time category signal emerges."
+    )
+    recommendation_2 = (
+        "Use the live forecast as a directional signal, but keep the main Trend anchored to historical data to avoid overstating short-term order spikes."
+        if show_trend_forecast
+        else "Enable the live forecast when presenting forward-looking scenarios to leadership."
+    )
+    recommendation_3 = (
+        f"The latest signal from <strong>{latest_source}</strong> indicates live demand from <strong>{latest_customer}</strong>; review recent order mix if similar events repeat."
+        if live_order_count
+        else "Continue collecting live events before making operational changes from the real-time layer."
+    )
+
+    pdf_bytes = build_executive_summary_pdf(
+        total_revenue=total_revenue,
+        total_profit=total_profit,
+        margin=margin,
+        live_revenue=live_revenue,
+        live_order_count=live_order_count,
+        avg_live_order=avg_live_order,
+        latest_order_value=latest_order_value,
+        top_category_name=top_category_plain,
+        top_category_revenue=top_category_revenue,
+        segment_rows=segment_rows_for_pdf,
+        recommendations=[recommendation_1_plain, recommendation_2_plain, recommendation_3_plain],
+        data_source_mode=data_source_mode,
+        generated_at=generated_at,
+    )
+
+    st.html(
+        """
+        <style>
+          div[data-testid="stDownloadButton"] button {
+            min-height: 40px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(47,88,112,0.94), rgba(46,111,115,0.88)) !important;
+            border: 1px solid rgba(255,255,255,0.38) !important;
+            color: rgba(255,255,255,0.96) !important;
+            box-shadow:
+              0 14px 30px rgba(15,23,42,0.18),
+              0 0 0 4px rgba(46,111,115,0.12),
+              inset 0 1px 0 rgba(255,255,255,0.32);
+            font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif !important;
+            font-weight: 950 !important;
+            letter-spacing: 0.01em !important;
+          }
+          div[data-testid="stDownloadButton"] button:hover {
+            background: linear-gradient(135deg, rgba(37,78,102,0.98), rgba(38,102,106,0.94)) !important;
+            border-color: rgba(255,255,255,0.56) !important;
+            box-shadow:
+              0 18px 36px rgba(15,23,42,0.22),
+              0 0 0 5px rgba(46,111,115,0.18),
+              inset 0 1px 0 rgba(255,255,255,0.38);
+            transform: translateY(-1px);
+          }
+        </style>
+        """
+    )
+    head_left, head_right = st.columns([0.82, 0.18], gap="small")
+    with head_left:
+        st.html("<div class='exec-heading-inline'>Executive Summary</div>")
+    with head_right:
+        st.download_button(
+            "↓ Download",
+            data=pdf_bytes,
+            file_name=f"green_bike_executive_summary_{generated_at.strftime('%Y%m%d_%H%M%S')}.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+        )
+
+    st.html(
+        f"""
+        <style>
+          .exec-heading-inline {{
+            color: rgba(17,24,39,0.92);
+            font-size: 1.35rem;
+            font-weight: 950;
+            letter-spacing: -0.02em;
+            padding: 8px 0 2px 0;
+          }}
+          .exec-summary {{
+            position: relative;
+            border-radius: 26px;
+            padding: 24px;
+            background: rgba(255,255,255,0.16);
+            border: 1px solid rgba(255,255,255,0.34);
+            box-shadow: 0 18px 46px rgba(15,23,42,0.16), inset 0 1px 0 rgba(255,255,255,0.48);
+            backdrop-filter: blur(13px) saturate(1.06);
+            -webkit-backdrop-filter: blur(13px) saturate(1.06);
+          }}
+          .exec-summary p {{
+            color: rgba(16,35,56,0.70);
+            line-height: 1.65;
+            font-weight: 760;
+            margin: 12px 0 0 0;
+          }}
+          .exec-grid {{
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 18px;
+            margin-top: 18px;
+          }}
+          .exec-section {{
+            border-radius: 20px;
+            padding: 16px;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.28);
+          }}
+          .exec-section h4 {{
+            margin: 0 0 10px 0;
+            color: rgba(17,24,39,0.86);
+            font-size: 0.98rem;
+            font-weight: 950;
+          }}
+          .exec-section ul {{
+            margin: 0;
+            padding-left: 18px;
+            color: rgba(16,35,56,0.70);
+            line-height: 1.58;
+            font-weight: 760;
+          }}
+          .exec-metrics {{
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 16px;
+          }}
+          .exec-metric {{
+            border-radius: 18px;
+            padding: 13px;
+            background: rgba(61,209,168,0.12);
+            border: 1px solid rgba(61,209,168,0.22);
+          }}
+          .exec-metric span {{
+            display: block;
+            color: rgba(16,35,56,0.56);
+            font-size: 0.76rem;
+            font-weight: 900;
+          }}
+          .exec-metric strong {{
+            display: block;
+            margin-top: 6px;
+            color: rgba(17,24,39,0.92);
+            font-size: 1.08rem;
+            font-weight: 950;
+          }}
+          @media (max-width: 1000px) {{
+            .exec-grid, .exec-metrics {{ grid-template-columns: 1fr; }}
+          }}
+        </style>
+        <div class="exec-summary">
+          <p>
+            The current report view shows <strong>{_fmt_money_short(total_revenue)}</strong> in revenue and
+            <strong>{_fmt_money_short(total_profit)}</strong> in profit, with an overall margin of
+            <strong>{_fmt_pct(margin)}</strong>. The live data layer has contributed
+            <strong>{_fmt_money_short(live_revenue)}</strong> across <strong>{live_order_count:,}</strong>
+            real-time events, representing <strong>{_fmt_pct(live_share)}</strong> of the current metric view.
+            Source mode is <strong>{html.escape(data_source_mode)}</strong>; report generated at <strong>{generated_at.strftime('%H:%M:%S')}</strong>.
+          </p>
+          <div class="exec-metrics">
+            <div class="exec-metric"><span>Avg Live Order</span><strong>{_fmt_money_short(avg_live_order)}</strong></div>
+            <div class="exec-metric"><span>Latest Order</span><strong>{_fmt_money_short(latest_order_value)}</strong></div>
+            <div class="exec-metric"><span>Top Category</span><strong>{top_category_name}</strong></div>
+            <div class="exec-metric"><span>Top Category Revenue</span><strong>{_fmt_money_short(top_category_revenue)}</strong></div>
+          </div>
+          <div class="exec-grid">
+            <div class="exec-section">
+              <h4>Key Findings</h4>
+              <ul>
+                <li><strong>{top_category_name}</strong> is the leading revenue category in the current report view.</li>
+                <li>The latest live source is <strong>{latest_source}</strong>, with the latest order value at <strong>{_fmt_money_short(latest_order_value)}</strong>.</li>
+                <li>Live metrics are updating KPI and category movement while preserving the historical Trend timeline.</li>
+              </ul>
+            </div>
+            <div class="exec-section">
+              <h4>Margin Segments</h4>
+              <ul>{segment_html}</ul>
+            </div>
+            <div class="exec-section">
+              <h4>Recommended Actions</h4>
+              <ul>
+                <li>{recommendation_1}</li>
+                <li>{recommendation_2}</li>
+                <li>{recommendation_3}</li>
+              </ul>
+            </div>
+            <div class="exec-section">
+              <h4>Operating Note</h4>
+              <ul>
+                <li>Use the live report for short-cycle monitoring, but validate sustained movement over multiple refresh windows before changing inventory allocation.</li>
+                <li>Escalate repeated high-value live events by category into campaign or replenishment decisions.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        """
+    )
+
+
+def render_live_operations_summary(
+    *,
+    live_events: pd.DataFrame,
+    metric_view: pd.DataFrame,
+    show_trend_forecast: bool,
+) -> None:
+    live_revenue = float(live_events["Revenue USD"].sum()) if not live_events.empty and "Revenue USD" in live_events.columns else 0.0
+    latest_source = "Waiting for live events"
+    latest_order = "No active order yet"
+    top_live_category = "No live category yet"
+    if not live_events.empty:
+        latest = live_events.iloc[-1]
+        latest_source = str(latest.get("Live Source", "Live source"))
+        latest_order = f"{latest.get('OrderNumber', 'LIVE')} / {_fmt_money_short(float(latest.get('Revenue USD', 0.0) or 0.0))}"
+        cat_col = "CatDescr" if "CatDescr" in live_events.columns else ("ProdCat" if "ProdCat" in live_events.columns else None)
+        if cat_col:
+            top = (
+                live_events.groupby(cat_col, as_index=False)["Revenue USD"]
+                .sum()
+                .sort_values("Revenue USD", ascending=False)
+                .head(1)
+            )
+            if not top.empty:
+                top_live_category = str(top.iloc[0][cat_col])
+
+    total_metric_revenue = float(metric_view["Revenue USD"].sum()) if not metric_view.empty and "Revenue USD" in metric_view.columns else 0.0
+    live_share = live_revenue / total_metric_revenue if total_metric_revenue else 0.0
+    forecast_status = "Live forecast active" if show_trend_forecast else "Forecast hidden"
+
+    cards = [
+        ("🚲", "Live Revenue Layer", _fmt_money_short(live_revenue), f"{_fmt_pct(live_share)} of current metric view"),
+        ("⚡", "Latest Order Signal", latest_order, latest_source),
+        ("🌿", "Top Live Category", html.escape(top_live_category), "Fastest moving live segment"),
+        ("🛣", "Trend Projection", forecast_status, "Forecast is separated from historical Trend"),
+    ]
+    cards_html = "".join(
+        f"""
+        <div class="ops-card">
+          <div class="ops-deco">{icon}</div>
+          <div class="ops-label">{label}</div>
+          <div class="ops-value">{value}</div>
+          <div class="ops-note">{note}</div>
+        </div>
+        """
+        for icon, label, value, note in cards
+    )
+    st.html(
+        f"""
+        <style>
+          .ops-grid {{
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin: 0 0 14px 0;
+          }}
+          .ops-card {{
+            min-height: 118px;
+            padding: 18px 18px 16px 18px;
+            border-radius: 22px;
+            background: rgba(255,255,255,0.16);
+            border: 1px solid rgba(255,255,255,0.34);
+            box-shadow: 0 16px 40px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.48);
+            backdrop-filter: blur(13px) saturate(1.06);
+            -webkit-backdrop-filter: blur(13px) saturate(1.06);
+            position: relative;
+            overflow: hidden;
+          }}
+          .ops-deco {{
+            position: absolute;
+            right: 14px;
+            top: 12px;
+            width: 36px;
+            height: 36px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.24);
+            border: 1px solid rgba(255,255,255,0.34);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.38);
+            font-size: 1.12rem;
+            opacity: 0.95;
+          }}
+          .ops-card::before {{
+            content: "";
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            top: 0;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(61,209,168,0), rgba(61,209,168,0.76), rgba(61,209,168,0));
+          }}
+          .ops-label {{
+            padding-right: 42px;
+            color: rgba(16,35,56,0.56);
+            font-family: Nunito, Inter, -apple-system, Segoe UI, sans-serif;
+            font-size: 0.78rem;
+            font-weight: 900;
+            letter-spacing: 0.02em;
+          }}
+          .ops-value {{
+            margin-top: 10px;
+            padding-right: 34px;
+            color: rgba(17,24,39,0.92);
+            font-size: 1.35rem;
+            line-height: 1.12;
+            font-weight: 950;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }}
+          .ops-note {{
+            margin-top: 8px;
+            color: rgba(16,35,56,0.56);
+            font-size: 0.82rem;
+            font-weight: 800;
+          }}
+          @media (max-width: 1100px) {{
+            .ops-grid {{ grid-template-columns: 1fr; }}
+          }}
+        </style>
+        <div class="ops-grid">{cards_html}</div>
+        """
+    )
+
+
+def render_live_dashboard_tab(
+    *,
+    view: pd.DataFrame,
+    metric_view: pd.DataFrame,
+    live_events: pd.DataFrame,
+    margin_segments: pd.DataFrame,
+    show_trend_forecast: bool,
+) -> None:
+    render_live_operations_summary(
+        live_events=live_events,
+        metric_view=metric_view,
+        show_trend_forecast=show_trend_forecast,
+    )
+
+    fin_monthly = monthly_fin_kpis(metric_view).tail(12)
+    if fin_monthly.empty:
+        k1, k2, k3, k4 = st.columns([1, 1, 1, 1], gap="small")
+        with k1:
+            render_fin_kpi_card(icon="％", title="Gross Margin", value="—", arrow="—", arrow_cls="", spark_values=[])
+        with k2:
+            render_fin_kpi_card(icon="🏷️", title="Discount Rate", value="—", arrow="—", arrow_cls="", spark_values=[])
+        with k3:
+            render_fin_kpi_card(icon="💳", title="Average Order Value", value="—", arrow="—", arrow_cls="", spark_values=[])
+        with k4:
+            render_fin_kpi_card(icon="💹", title="Profit / Unit", value="—", arrow="—", arrow_cls="", spark_values=[])
+    else:
+        this_row = fin_monthly.iloc[-1]
+        prev_row = fin_monthly.iloc[-2] if len(fin_monthly) >= 2 else None
+        gm = float(this_row["gross_margin_pct"])
+        dr = float(this_row["discount_rate_pct"])
+        aov = float(this_row["aov_usd"])
+        ppu = float(this_row["profit_per_unit_usd"])
+        gm_arrow, gm_cls = _trend_dir(gm, float(prev_row["gross_margin_pct"])) if prev_row is not None else ("—", "")
+        dr_arrow, dr_cls = _trend_dir(dr, float(prev_row["discount_rate_pct"])) if prev_row is not None else ("—", "")
+        aov_arrow, aov_cls = _trend_dir(aov, float(prev_row["aov_usd"])) if prev_row is not None else ("—", "")
+        ppu_arrow, ppu_cls = _trend_dir(ppu, float(prev_row["profit_per_unit_usd"])) if prev_row is not None else ("—", "")
+
+        k1, k2, k3, k4 = st.columns([1, 1, 1, 1], gap="small")
+        with k1:
+            render_fin_kpi_card(icon="％", title="Gross Margin", value=_fmt_pct(gm), arrow=gm_arrow, arrow_cls=gm_cls, spark_values=fin_monthly["gross_margin_pct"].fillna(0).tolist())
+        with k2:
+            render_fin_kpi_card(icon="🏷️", title="Discount Rate", value=_fmt_pct(dr), arrow=dr_arrow, arrow_cls=dr_cls, spark_values=fin_monthly["discount_rate_pct"].fillna(0).tolist())
+        with k3:
+            render_fin_kpi_card(icon="💳", title="Average Order Value", value=_fmt_money_short(aov), arrow=aov_arrow, arrow_cls=aov_cls, spark_values=fin_monthly["aov_usd"].fillna(0).tolist())
+        with k4:
+            render_fin_kpi_card(icon="💹", title="Profit / Unit", value=_fmt_money_short(ppu), arrow=ppu_arrow, arrow_cls=ppu_cls, spark_values=fin_monthly["profit_per_unit_usd"].fillna(0).tolist())
+
+    st.markdown("<div style='height: 14px'></div>", unsafe_allow_html=True)
+    view = view.copy()
+    view["Month"] = view["Date"].dt.to_period("M").dt.to_timestamp()
+    monthly = (
+        view.groupby("Month", as_index=False)[["Revenue USD", "Profit"]]
+        .sum()
+        .sort_values("Month", ascending=True)
+    )
+
+    left, right = st.columns([2, 1], gap="small")
+    with left:
+        with st.spinner("Loading…"):
+            render_chart_card(
+                key="card_trend",
+                title="Trend",
+                subtitle="Revenue (bar) + Profit (spline) + Live forecast" if show_trend_forecast else "Revenue (bar) + Profit (spline)",
+                fig=fig_time_trend(monthly, live_events=live_events, show_live_forecast=show_trend_forecast),
+            )
+    with right:
+        with st.spinner("Loading…"):
+            if "share_dim" not in st.session_state:
+                st.session_state["share_dim"] = "CustDescr" if "CustDescr" in view.columns else "SalesOrg"
+            dim = str(st.session_state.get("share_dim") or "SalesOrg")
+            if dim not in view.columns:
+                dim = "CustDescr" if "CustDescr" in view.columns else ("SalesOrg" if "SalesOrg" in view.columns else ("Country" if "Country" in view.columns else dim))
+                st.session_state["share_dim"] = dim
+            render_chart_card(key="card_share", title="Share", subtitle=f"Revenue share by {dim}", fig=fig_share_donut(view, dim=dim))
+
+    st.markdown("<div style='height: 14px'></div>", unsafe_allow_html=True)
+    bleft, bright = st.columns([1, 1], gap="small")
+    with bleft:
+        with st.spinner("Loading…"):
+            render_categories_target_list(key="card_mix", df=metric_view, margin_segments=margin_segments)
+    with bright:
+        with st.spinner("Loading…"):
+            render_customers_map_card(key="card_topcust", df=view)
+
+
 def main() -> None:
     st.set_page_config(page_title="Global Bike Sales Dashboard", layout="wide", initial_sidebar_state="expanded")
 
@@ -2200,6 +3502,71 @@ def main() -> None:
             st.stop()
 
         df = get_clean_data(str(data_path))
+
+        st.markdown("<div style='height: 12px'></div>", unsafe_allow_html=True)
+        st.subheader("Data Source")
+        data_source_mode = st.selectbox(
+            "Mode",
+            options=DATA_SOURCE_MODES,
+            index=0,
+            help="Demo Stream is active now; the other modes document production-ready connection targets.",
+        )
+        if data_source_mode != "Demo Stream":
+            st.caption(f"{data_source_mode} is a planned production connector. This local build keeps using the demo stream.")
+
+        st.markdown("<div style='height: 12px'></div>", unsafe_allow_html=True)
+        st.subheader("Realtime")
+        live_mode = st.toggle(
+            "Live demo stream",
+            value=True,
+            help="Simulates Shopify / Square POS / Lightspeed order webhooks until a real API is connected.",
+        )
+        live_paused_key = _live_state_key("paused")
+        live_paused = False
+        if live_mode:
+            live_paused = st.toggle(
+                "Stop live refresh",
+                value=bool(st.session_state.get(live_paused_key, False)),
+                key=live_paused_key,
+                help="Stop the 3-second live dashboard refresh without clearing current live orders.",
+            )
+
+        show_trend_forecast = st.toggle(
+            "Trend live forecast",
+            value=True,
+            help="Add a live projection point to Trend without mixing live demo dates into historical data.",
+        )
+
+        live_refresh_active = live_mode and not live_paused
+        if live_refresh_active:
+            if st_autorefresh is not None:
+                st_autorefresh(interval=LIVE_REFRESH_SEC * 1000, key="live_sales_autorefresh")
+            else:
+                st.caption("Install streamlit-autorefresh to enable browser auto-refresh.")
+        if st.button("Reset live demo data", use_container_width=True):
+            reset_live_demo_state()
+            st.rerun()
+
+        if live_mode:
+            _, live_events = apply_live_demo_stream(df, enabled=live_refresh_active, interval_sec=LIVE_REFRESH_SEC)
+            if not live_refresh_active:
+                live_events = get_live_demo_events()
+        else:
+            live_events = pd.DataFrame()
+
+        last_updated = datetime.now()
+        st.caption(f"Last updated: {last_updated.strftime('%H:%M:%S')} · Auto refresh every {LIVE_REFRESH_SEC}s")
+
+        with st.expander("About Data", expanded=False):
+            st.markdown(
+                """
+                - Historical charts use the filtered Excel sales dataset to keep long-term trend continuity.
+                - Live demo events simulate Shopify, Square POS, and Lightspeed order webhooks.
+                - KPI, Top 5 Categories, and the Live Report use a metric layer that includes live events.
+                - The main Trend chart keeps live data separate and uses a forecast overlay to avoid timeline distortion.
+                - Production connectors can replace the demo stream without changing the page structure.
+                """
+            )
 
         st.markdown("<div style='height: 12px'></div>", unsafe_allow_html=True)
         st.subheader("Filters")
@@ -2267,6 +3634,20 @@ def main() -> None:
         mask &= df["CatDescr"].astype("string").fillna("Unknown").isin(selected_catdescr)
 
     view = df.loc[mask].copy()
+    render_live_activity(live_events, interval_sec=LIVE_REFRESH_SEC)
+    live_metric_events = prepare_live_metric_events(
+        live_events,
+        df,
+        reference_date=df["Date"].max(),
+        start_date=start,
+        end_date=end,
+        search=search,
+        selected_countries=selected_countries,
+        selected_prodcats=selected_prodcats,
+        selected_salesorg=selected_salesorg,
+        selected_catdescr=selected_catdescr,
+    )
+    metric_view = pd.concat([view, live_metric_events], ignore_index=True) if not live_metric_events.empty else view
 
     # Build a non-date mask (dimension + search filters only).
     mask_non_date = pd.Series(True, index=df.index)
@@ -2290,139 +3671,51 @@ def main() -> None:
         mask_non_date &= df["CatDescr"].astype("string").fillna("Unknown").isin(selected_catdescr)
 
     base_df = df.loc[mask_non_date].copy()
+    metric_base_df = pd.concat([base_df, live_metric_events], ignore_index=True) if not live_metric_events.empty else base_df
 
     # Month-over-month KPI growth (this month vs last month)
-    rev_mom, mom_month = compute_mom_growth_pct(base_df, "Revenue USD")
-    prof_mom, _ = compute_mom_growth_pct(base_df, "Profit")
+    rev_mom, mom_month = compute_mom_growth_pct(metric_base_df, "Revenue USD")
+    prof_mom, _ = compute_mom_growth_pct(metric_base_df, "Profit")
     # Margin is a rate, compute MoM on avg margin for month slices
     if mom_month is not None:
         this_m = mom_month
         prev_m = mom_month - 1
-        this_avg_m = float(base_df.loc[base_df["Date"].dt.to_period("M") == this_m, "Profit Margin"].mean())
-        prev_avg_m = float(base_df.loc[base_df["Date"].dt.to_period("M") == prev_m, "Profit Margin"].mean())
+        this_avg_m = float(metric_base_df.loc[metric_base_df["Date"].dt.to_period("M") == this_m, "Profit Margin"].mean())
+        prev_avg_m = float(metric_base_df.loc[metric_base_df["Date"].dt.to_period("M") == prev_m, "Profit Margin"].mean())
         margin_mom = None if (pd.isna(prev_avg_m) or prev_avg_m == 0) else (this_avg_m - prev_avg_m) / prev_avg_m
-        orders_this = int(base_df.loc[base_df["Date"].dt.to_period("M") == this_m].shape[0])
-        orders_prev = int(base_df.loc[base_df["Date"].dt.to_period("M") == prev_m].shape[0])
+        orders_this = int(metric_base_df.loc[metric_base_df["Date"].dt.to_period("M") == this_m].shape[0])
+        orders_prev = int(metric_base_df.loc[metric_base_df["Date"].dt.to_period("M") == prev_m].shape[0])
         orders_mom = None if orders_prev == 0 else (orders_this - orders_prev) / orders_prev
     else:
         margin_mom = None
         orders_mom = None
 
     # Product segmentation by Profit Margin (prepared aggregation data)
-    product_level, margin_segments = classify_products_by_margin(base_df)
+    product_level, margin_segments = classify_products_by_margin(metric_base_df)
 
-    # Financial KPI row (4 cards, tight)
-    fin_monthly = monthly_fin_kpis(view).tail(12)
-    if fin_monthly.empty:
-        k1, k2, k3, k4 = st.columns([1, 1, 1, 1], gap="small")
-        with k1:
-            render_fin_kpi_card(icon="％", title="Gross Margin", value="—", arrow="—", arrow_cls="", spark_values=[])
-        with k2:
-            render_fin_kpi_card(icon="🏷️", title="Discount Rate", value="—", arrow="—", arrow_cls="", spark_values=[])
-        with k3:
-            render_fin_kpi_card(icon="💳", title="Average Order Value", value="—", arrow="—", arrow_cls="", spark_values=[])
-        with k4:
-            render_fin_kpi_card(icon="💹", title="Profit / Unit", value="—", arrow="—", arrow_cls="", spark_values=[])
-    else:
-        # Current (latest month) KPI values and arrows vs previous month
-        this_row = fin_monthly.iloc[-1]
-        prev_row = fin_monthly.iloc[-2] if len(fin_monthly) >= 2 else None
+    design_tab, dashboard_tab, report_tab = st.tabs(["Design Vision", "Live Dashboard", "Live Report"])
 
-        gm = float(this_row["gross_margin_pct"])
-        dr = float(this_row["discount_rate_pct"])
-        aov = float(this_row["aov_usd"])
-        ppu = float(this_row["profit_per_unit_usd"])
+    with design_tab:
+        render_design_vision_tab(live_events=live_events, metric_view=metric_view)
 
-        gm_arrow, gm_cls = _trend_dir(gm, float(prev_row["gross_margin_pct"])) if prev_row is not None else ("—", "")
-        dr_arrow, dr_cls = _trend_dir(dr, float(prev_row["discount_rate_pct"])) if prev_row is not None else ("—", "")
-        aov_arrow, aov_cls = _trend_dir(aov, float(prev_row["aov_usd"])) if prev_row is not None else ("—", "")
-        ppu_arrow, ppu_cls = _trend_dir(ppu, float(prev_row["profit_per_unit_usd"])) if prev_row is not None else ("—", "")
+    with dashboard_tab:
+        render_live_dashboard_tab(
+            view=view,
+            metric_view=metric_view,
+            live_events=live_events,
+            margin_segments=margin_segments,
+            show_trend_forecast=show_trend_forecast,
+        )
 
-        k1, k2, k3, k4 = st.columns([1, 1, 1, 1], gap="small")
-        with k1:
-            render_fin_kpi_card(
-                icon="％",
-                title="Gross Margin",
-                value=_fmt_pct(gm),
-                arrow=gm_arrow,
-                arrow_cls=gm_cls,
-                spark_values=fin_monthly["gross_margin_pct"].fillna(0).tolist(),
-            )
-        with k2:
-            render_fin_kpi_card(
-                icon="🏷️",
-                title="Discount Rate",
-                value=_fmt_pct(dr),
-                arrow=dr_arrow,
-                arrow_cls=dr_cls,
-                spark_values=fin_monthly["discount_rate_pct"].fillna(0).tolist(),
-            )
-        with k3:
-            render_fin_kpi_card(
-                icon="💳",
-                title="Average Order Value",
-                value=_fmt_money_short(aov),
-                arrow=aov_arrow,
-                arrow_cls=aov_cls,
-                spark_values=fin_monthly["aov_usd"].fillna(0).tolist(),
-            )
-        with k4:
-            render_fin_kpi_card(
-                icon="💹",
-                title="Profit / Unit",
-                value=_fmt_money_short(ppu),
-                arrow=ppu_arrow,
-                arrow_cls=ppu_cls,
-                spark_values=fin_monthly["profit_per_unit_usd"].fillna(0).tolist(),
-            )
-
-    st.markdown("<div style='height: 14px'></div>", unsafe_allow_html=True)
-
-    view["Month"] = view["Date"].dt.to_period("M").dt.to_timestamp()
-    monthly = (
-        view.groupby("Month", as_index=False)[["Revenue USD", "Profit"]]
-        .sum()
-        .sort_values("Month", ascending=True)
-    )
-
-    # Bento row 2 (2/3 + 1/3): main trend + share donut
-    left, right = st.columns([2, 1], gap="small")
-    with left:
-        with st.spinner("Loading…"):
-            render_chart_card(
-                key="card_trend",
-                title="Trend",
-                subtitle="Revenue (bar) + Profit (spline)",
-                fig=fig_time_trend(monthly),
-            )
-    with right:
-        with st.spinner("Loading…"):
-            # Share dimension (driven by icon buttons under the donut)
-            if "share_dim" not in st.session_state:
-                st.session_state["share_dim"] = "CustDescr" if "CustDescr" in view.columns else "SalesOrg"
-            dim = str(st.session_state.get("share_dim") or "SalesOrg")
-            if dim not in view.columns:
-                # graceful fallback based on availability
-                dim = "CustDescr" if "CustDescr" in view.columns else ("SalesOrg" if "SalesOrg" in view.columns else ("Country" if "Country" in view.columns else dim))
-                st.session_state["share_dim"] = dim
-
-            render_chart_card(
-                key="card_share",
-                title="Share",
-                subtitle=f"Revenue share by {dim}",
-                fig=fig_share_donut(view, dim=dim),
-            )
-
-    st.markdown("<div style='height: 14px'></div>", unsafe_allow_html=True)
-
-    # Bento row 3: two side-by-side category analysis cards
-    bleft, bright = st.columns([1, 1], gap="small")
-    with bleft:
-        with st.spinner("Loading…"):
-            render_categories_target_list(key="card_mix", df=view, margin_segments=margin_segments)
-    with bright:
-        with st.spinner("Loading…"):
-            render_customers_map_card(key="card_topcust", df=view)
+    with report_tab:
+        render_live_report_tab(
+            metric_view=metric_view,
+            live_events=live_events,
+            margin_segments=margin_segments,
+            show_trend_forecast=show_trend_forecast,
+            data_source_mode=data_source_mode,
+            generated_at=last_updated,
+        )
 
     # Website-like signature footer
     st.markdown(
