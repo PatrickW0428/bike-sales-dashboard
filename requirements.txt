@@ -1,7 +1,9 @@
 streamlit
+streamlit-autorefresh
 pandas
 plotly
 openpyxl
+reportlab
 
 # Optional / UI extras used by the app
 altair
